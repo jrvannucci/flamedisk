@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flamedisk"
+version = "0.5.0"
+description = "A python tool for mapping the size of directories and files in a file store to an easy to read HTML"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["disk", "usage", "flamegraph", "treemap", "storage", "du"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Filesystems",
+    "Topic :: Utilities",
+]
+
+[project.scripts]
+flamedisk = "flamedisk.cli:main"
+
+[project.optional-dependencies]
+rich = ["rich>=13"]
+dev  = ["ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["flamedisk*"]
+
+[tool.setuptools.package-data]
+flamedisk = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
