@@ -321,7 +321,7 @@ function _build(id){
 }
 const ROOT=_build(0);
 /* ── state ── */
-let vr=ROOT,nav=[],sel=null,sq="";
+let vr=ROOT,nav=[],sel=null,sq="",zr=null;
 /* ── palette ── */
 const DEPTH_HUES=[210,160,280,40,0,320,80,200,260,120];
 const EP={
@@ -441,15 +441,29 @@ function renderTree(){
 }
 /* ══ ICICLE CHART ══ */
 const mcEl=document.getElementById("mc");
+/* ── icicle helpers ── */
+function _isAncestorOrSelf(ancestor,node){
+  if(ancestor===node) return true;
+  for(const ch of (ancestor.c||[])){if(_isAncestorOrSelf(ch,node)) return true;}
+  return false;
+}
 function renderIcicle(){
   mcEl.innerHTML="";
   document.getElementById("mt2").textContent=vr.n||(vr.p||"");
   const totalW=mcEl.clientWidth||600;
   if(!totalW) return;
+  /* Always BFS from vr (the tree-nav root) so absolute depths and colours
+     are stable. zr is the zoom node: when set we rescale x-positions so
+     zr fills the full width, and skip rows that fall entirely outside it. */
+  const zx0=zr?_itemX0(vr,zr):0;
+  const zx1=zr?zx0+(zr.s/vr.s):1;
+  const zspan=zx1-zx0||1;
   const queue=[{node:vr,x0:0,x1:1,depth:0,sibIdx:0,sibCount:1,parent:null}];
   const byDepth=[];
   while(queue.length){
     const item=queue.shift();
+    /* When zoomed, skip nodes that don't overlap the zoom window */
+    if(zr&&(item.x1<=zx0||item.x0>=zx1)) continue;
     if(!byDepth[item.depth]) byDepth[item.depth]=[];
     byDepth[item.depth].push(item);
     const kids=item.node.c||[];
@@ -463,17 +477,24 @@ function renderIcicle(){
       });
     }
   }
+  /* Find the depth of the zoom node so we can shift row labels */
+  const zDepth=zr?byDepth.findIndex(row=>row.some(it=>it.node===zr)):0;
   byDepth.forEach((row,depth)=>{
     const rowEl=document.createElement("div");
     rowEl.className="irow";
     rowEl.style.cssText="display:flex;height:28px;margin-bottom:2px;gap:1px;position:relative";
     row.forEach(item=>{
       const {node,x0,x1,sibIdx,sibCount,parent}=item;
-      const widthPx=(x1-x0)*totalW;
-      if(widthPx<1) return;
+      /* Remap x into zoomed coordinate space */
+      const rx0=zr?(x0-zx0)/zspan:x0;
+      const rx1=zr?(x1-zx0)/zspan:x1;
+      const widthPx=(rx1-rx0)*totalW;
+      if(widthPx<0.5) return;
+      /* Dim cells outside the zoomed subtree, keep colour/depth unchanged */
+      const inZoom=!zr||_isAncestorOrSelf(zr,node)||(zr&&_isAncestorOrSelf(node,zr));
       const col=ec(node,depth,sibIdx,sibCount);
       const cell=document.createElement("div");
-      cell.className="ic"+(sq?matchSq(node)?" smatch":" sdim":"")+(sel&&(sel.p||sel.n)===(node.p||node.n)?" sel":"");
+      cell.className="ic"+(sq?matchSq(node)?" smatch":" sdim":"")+(sel&&(sel.p||sel.n)===(node.p||node.n)?" sel":"")+(zr&&!inZoom?" sdim":"");
       cell.style.cssText=`width:${widthPx.toFixed(2)}px;background:${col};flex-shrink:0;height:100%;min-width:1px;position:relative;overflow:hidden;cursor:pointer;border-radius:3px;transition:filter .12s`;
       if(widthPx>38){
         const lbl=document.createElement("div");
@@ -499,17 +520,38 @@ function renderIcicle(){
       cell.addEventListener("click",e=>{
         e.stopPropagation();
         selectNode(node,null);
-        if(node.d&&node.c&&node.c.length){nav.push(vr);vr=node;renderAll();}
+        if(node.d&&node.c&&node.c.length){
+          zr=(zr===node)?null:node;
+          renderIcicle();
+        }
       });
       rowEl.appendChild(cell);
     });
     const depthNote=document.createElement("span");
     depthNote.style.cssText="position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:9px;color:var(--mt);pointer-events:none;font-family:var(--mono);";
-    depthNote.textContent=depth===0?"root":"L"+depth;
+    const dispDepth=depth-(zDepth>0?zDepth:0);
+    depthNote.textContent=depth===0?"root":(zr&&dispDepth===0?"zoom":"L"+depth);
     rowEl.appendChild(depthNote);
     mcEl.appendChild(rowEl);
   });
   updateLegend();
+}
+/* Walk vr's tree to find the x0 fraction of a target node */
+function _itemX0(root,target){
+  function walk(node,x0,x1){
+    if(node===target) return x0;
+    const kids=node.c||[];
+    if(!kids.length||!node.s) return null;
+    const span=x1-x0; let cx=x0;
+    for(const ch of kids){
+      const w=span*(ch.s/node.s);
+      const r=walk(ch,cx,cx+w);
+      if(r!==null) return r;
+      cx+=w;
+    }
+    return null;
+  }
+  return walk(root,0,1)??0;
 }
 /* ══ RENDER ALL ══ */
 function renderAll(){renderTree();renderIcicle();updatePB();}
@@ -522,7 +564,7 @@ function updatePB(){
     s.className="ps"+(i===chain.length-1?" cur":"");
     s.textContent=nd.n||(nd.p||"");
     s.title=nd.p||nd.n;
-    if(i<chain.length-1){const ci=i,cn=nd;s.addEventListener("click",()=>{nav.length=ci;vr=cn;renderAll();});}
+    if(i<chain.length-1){const ci=i,cn=nd;s.addEventListener("click",()=>{nav.length=ci;vr=cn;zr=null;renderAll();});}
     bar.appendChild(s);
   });
   const inf=document.getElementById("si");
@@ -585,11 +627,12 @@ rz.addEventListener("mousedown",e=>{rd=true;rs=e.clientX;rp=tp.offsetWidth;rz.cl
 window.addEventListener("mousemove",e=>{if(!rd)return;tp.style.width=Math.max(160,Math.min(600,rp+e.clientX-rs))+"px";});
 window.addEventListener("mouseup",()=>{if(rd){rd=false;rz.classList.remove("drag");renderIcicle();}});
 /* ── controls ── */
-document.getElementById("bup").addEventListener("click",()=>{if(nav.length){vr=nav.pop();renderAll();}});
-document.getElementById("brt").addEventListener("click",()=>{nav=[];vr=ROOT;renderAll();});
+document.getElementById("bup").addEventListener("click",()=>{if(nav.length){vr=nav.pop();zr=null;renderAll();}});
+document.getElementById("brt").addEventListener("click",()=>{nav=[];vr=ROOT;zr=null;renderAll();});
 document.getElementById("srch").addEventListener("input",e=>{sq=e.target.value.toLowerCase().trim();renderAll();});
 window.addEventListener("keydown",e=>{
   if(e.key==="Escape"){
+    if(zr){zr=null;renderIcicle();return;}
     if(nav.length){vr=nav.pop();renderAll();}
     sq="";document.getElementById("srch").value="";renderAll();
   }
