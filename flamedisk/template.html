@@ -99,13 +99,17 @@ body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;d
   <div id="si"></div>
 </div>
 <div id="tb">
-  <button class="tbtn" id="bup">▲ Up</button>
-  <button class="tbtn" id="brt">⌂ Root</button>
-  <div class="tsep"></div>
-  <div id="vt">
+  <button class="tbtn" id="brst">↺ Reset</button>
+  <div id="vt-main">
     <button class="vb on" data-v="tree">Tree+Flame</button>
     <button class="vb" data-v="map">Flame</button>
     <button class="vb" data-v="list">List</button>
+  </div>
+  <div class="tsep" id="sep-list" style="display:none"></div>
+  <div id="vt-list" style="display:none">
+    <button class="vb on" data-l="name">Name ↑</button>
+    <button class="vb" data-l="size">Size ↓</button>
+    <button class="vb" data-l="type">Type</button>
   </div>
   <div class="tsep"></div>
   <div id="sw"><span class="si2">⌕</span><input id="srch" type="text" placeholder="Search…" autocomplete="off"/></div>
@@ -123,7 +127,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;d
   <div id="mp">
     <div id="mh">
       Flame — <strong id="mt2"></strong>
-      <span class="hint">Click to drill in · Esc / ▲ Up to go back</span>
+      <span class="hint">Click to zoom · Esc to go back</span>
     </div>
     <div id="mc"></div>
     <div id="ileg"></div>
@@ -203,10 +207,11 @@ function ficon(n){
 function matchSq(nd){return sq&&(nd.n.toLowerCase().includes(sq)||(nd.p||"").toLowerCase().includes(sq));}
 /* ══ TREE PANEL ══ */
 const tbody=document.getElementById("tbody");
-function buildTree(node,parentEl,depth,parentSz,sibIdx,sibCount){
+function buildTree(node,parentEl,depth,parentSz,sibIdx,sibCount,rootSz){
   const hasC=node.d&&node.c&&node.c.length;
   const col=ec(node,depth,sibIdx,sibCount);
-  const fr=parentSz>0?node.s/parentSz:0;
+  const baseSz=curView==="list"?ROOT.s:(rootSz!=null?rootSz:parentSz);
+  const fr=baseSz>0?node.s/baseSz:0;
   const bw=Math.round(fr*60);
   const row=document.createElement("div");
   row.className="tr"+(sq?matchSq(node)?" smatch":" sdim":"");
@@ -218,16 +223,16 @@ function buildTree(node,parentEl,depth,parentSz,sibIdx,sibCount){
     `<div class="trn" title="${esc(node.n)}">${esc(node.n)}</div>`+
     `<div class="trbw"><div class="trb" style="width:${bw}px;background:${col}"></div></div>`+
     `<div class="trs">${fmt(node.s)}</div>`+
-    `<div class="trp">${pct(node.s,vr.s)}</div>`;
+    `<div class="trp">${pct(node.s,baseSz)}</div>`;
   row.addEventListener("click",e=>{
     e.stopPropagation();
     selectNode(node,row);
-    if(hasC) toggleRow(node,row,depth,parentSz,sibIdx,sibCount);
+    if(hasC) toggleRow(node,row,depth,parentSz,sibIdx,sibCount,rootSz);
   });
   parentEl.appendChild(row);
   return row;
 }
-function toggleRow(node,row,depth,parentSz,sibIdx,sibCount){
+function toggleRow(node,row,depth,parentSz,sibIdx,sibCount,rootSz){
   const tg=row.querySelector(".trg");
   if(!tg||!tg.textContent) return;
   if(tg.classList.contains("op")){
@@ -243,7 +248,7 @@ function toggleRow(node,row,depth,parentSz,sibIdx,sibCount){
     let after=row;
     const kids=node.c||[];
     kids.forEach((ch,ci)=>{
-      const r=buildTree(ch,document.createDocumentFragment(),depth+1,node.s,ci,kids.length);
+      const r=buildTree(ch,document.createDocumentFragment(),depth+1,node.s,ci,kids.length,rootSz);
       after.after(r); after=r;
     });
   }
@@ -478,7 +483,7 @@ function renderIcicle(){
   updateLegend(allVisible);
 }
 /* ══ RENDER ALL ══ */
-function renderAll(){renderTree();renderIcicle();updatePB();}
+function renderAll(){if(curView==="list"){renderList();}else{renderTree();renderIcicle();}updatePB();}
 function updatePB(){
   const bar=document.getElementById("pb"); bar.innerHTML="";
   const chain=nav.concat([vr]);
@@ -539,30 +544,70 @@ function moveTT(e){
 }
 /* ── view mode ── */
 const tp=document.getElementById("tp"),rz=document.getElementById("rz"),mp=document.getElementById("mp");
-document.querySelectorAll(".vb").forEach(b=>{
+const vtList=document.getElementById("vt-list");
+const sepList=document.getElementById("sep-list");
+let curView="tree";
+
+function applyView(v){
+  curView=v;
+  const isList=v==="list";
+  tp.style.display=v==="map"?"none":"";
+  rz.style.display=v==="tree"?"":"none";
+  mp.style.display=isList?"none":"";
+  vtList.style.display=isList?"":"none";
+  sepList.style.display=isList?"":"none";
+  if(!isList) setTimeout(renderIcicle,10);
+  if(isList) renderList();
+}
+
+document.querySelectorAll("#vt-main .vb").forEach(b=>{
   b.addEventListener("click",()=>{
-    document.querySelectorAll(".vb").forEach(x=>x.classList.remove("on"));
+    document.querySelectorAll("#vt-main .vb").forEach(x=>x.classList.remove("on"));
     b.classList.add("on");
-    const v=b.dataset.v;
-    tp.style.display=v==="map"?"":"";
-    rz.style.display=v==="tree"?"":"none";
-    mp.style.display=v==="list"?"none":"";
-    setTimeout(renderIcicle,10);
+    applyView(b.dataset.v);
   });
 });
+
+
+/* List sort buttons */
+let listSort="name";
+document.querySelectorAll("#vt-list .vb").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll("#vt-list .vb").forEach(x=>x.classList.remove("on"));
+    b.classList.add("on");
+    listSort=b.dataset.l;
+    renderList();
+  });
+});
+
+function renderList(){
+  if(curView!=="list") return;
+  const items=(vr.c||[]).slice();
+  if(listSort==="name") items.sort((a,b)=>a.n.localeCompare(b.n));
+  else if(listSort==="size") items.sort((a,b)=>b.s-a.s);
+  else if(listSort==="type") items.sort((a,b)=>(b.d||0)-(a.d||0)||a.n.localeCompare(b.n));
+  tbody.innerHTML="";
+  buildTree(vr,tbody,0,ROOT.s,0,1,ROOT.s);
+  items.forEach((ch,ci)=>buildTree(ch,tbody,1,ROOT.s,ci,items.length,ROOT.s));
+}
 /* ── resizer ── */
 let rd=false,rs=0,rp=0;
 rz.addEventListener("mousedown",e=>{rd=true;rs=e.clientX;rp=tp.offsetWidth;rz.classList.add("drag");e.preventDefault();});
 window.addEventListener("mousemove",e=>{if(!rd)return;tp.style.width=Math.max(160,Math.min(600,rp+e.clientX-rs))+"px";});
 window.addEventListener("mouseup",()=>{if(rd){rd=false;rz.classList.remove("drag");renderIcicle();}});
 /* ── controls ── */
-document.getElementById("bup").addEventListener("click",()=>{if(nav.length){vr=nav.pop();zr=null;renderAll();}});
-document.getElementById("brt").addEventListener("click",()=>{nav=[];vr=ROOT;zr=null;renderAll();});
+document.getElementById("brst").addEventListener("click",()=>{
+  nav=[];vr=ROOT;zr=null;
+  listSort="name";
+  document.querySelectorAll("#vt-list .vb").forEach((b,i)=>{b.classList.toggle("on",i===0);});
+  sq="";document.getElementById("srch").value="";
+  renderAll();
+});
 document.getElementById("srch").addEventListener("input",e=>{sq=e.target.value.toLowerCase().trim();renderAll();});
 window.addEventListener("keydown",e=>{
   if(e.key==="Escape"){
     if(zr){zr=null;renderIcicle();return;}
-    if(nav.length){vr=nav.pop();renderAll();}
+    if(nav.length){nav=[];vr=ROOT;renderAll();}
     sq="";document.getElementById("srch").value="";renderAll();
   }
 });
