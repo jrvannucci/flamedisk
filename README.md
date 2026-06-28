@@ -1,4 +1,4 @@
-# flamedisk 🔥
+# flamedisk 🔥💾
 
 Flame-graph & treemap disk-usage visualiser.
 
