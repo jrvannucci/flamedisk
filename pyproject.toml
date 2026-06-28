@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamedisk"
-version = "0.7.0"
+version = "0.7.1"
 description = "Flame-graph & treemap disk-usage visualiser"
 license = { text = "MIT" }
 requires-python = ">=3.9"
@@ -36,7 +36,7 @@ where = ["."]
 include = ["flamedisk*"]
 
 [tool.setuptools.package-data]
-flamedisk = ["py.typed"]
+flamedisk = ["py.typed", "template.html"]
 
 [tool.ruff]
 line-length = 100
