@@ -28,6 +28,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 import webbrowser
 from pathlib import Path
 
@@ -176,6 +177,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"⠿  Scanning {root_path} …", file=sys.stderr, flush=True)
 
+    t0 = time.perf_counter()
     tree = scan(
         root_path,
         max_depth=args.depth,
@@ -185,7 +187,8 @@ def main(argv: list[str] | None = None) -> int:
         workers=args.workers,
     )
 
-    print(f"✓  {root_path} — {_fmt(tree.size)}", file=sys.stderr)
+    elapsed = time.perf_counter() - t0
+    print(f"✓  {root_path} — {_fmt(tree.size)} — {elapsed:.2f}s", file=sys.stderr)
 
     if args.json:
         json.dump(tree.to_dict(), sys.stdout, indent=2)
