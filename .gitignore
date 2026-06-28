@@ -7,5 +7,7 @@ build/
 .venv/
 venv/
 .ruff_cache/
-*.html
+# Generated report files
 flamedisk_*.html
+# But keep the package template
+!flamedisk/template.html
