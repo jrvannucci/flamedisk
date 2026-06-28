@@ -18,8 +18,9 @@
 html,body{height:100%;overflow:hidden}
 body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;display:flex;flex-direction:column}
 #hd{height:38px;background:var(--sf);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 10px;gap:10px;flex-shrink:0}
-.logo{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ac);white-space:nowrap}
+.logo{font-family:var(--mono);font-size:15px;font-weight:700;white-space:nowrap}
 .logo em{color:var(--tx);font-style:normal}
+.logo .fl{background:linear-gradient(to top,#e85d04,#f48c06,#ffd166);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 #pb{flex:1;display:flex;align-items:center;gap:2px;font-family:var(--mono);font-size:12px;overflow:hidden;white-space:nowrap}
 .ps{color:var(--mt);cursor:pointer;padding:1px 4px;border-radius:3px;transition:background .1s,color .1s}
 .ps:hover{background:var(--sf2);color:var(--tx)}
@@ -65,7 +66,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;d
 #mh{height:26px;background:var(--sf2);border-bottom:1px solid var(--bd);display:flex;align-items:center;padding:0 10px;font-size:11px;color:var(--mt);flex-shrink:0;gap:8px}
 #mh strong{color:var(--tx)}
 #mh .hint{margin-left:auto;font-size:10px;color:var(--mt)}
-#mc{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;padding:4px 6px 8px}
+#mc{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;padding:4px 6px 8px;display:flex;flex-direction:column-reverse}
 .irow{display:flex;height:28px;margin-bottom:2px;position:relative}
 .irow-cells{flex:1;display:flex;height:100%;gap:1px;overflow:hidden}
 .ic{height:100%;min-width:1px;position:relative;overflow:hidden;cursor:pointer;border-radius:3px;transition:filter .12s,outline .1s;flex-shrink:0}
@@ -93,7 +94,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;d
 </head>
 <body>
 <div id="hd">
-  <span class="logo">flame<em>disk</em></span>
+  <span class="logo"><span class="fl">flame</span><em>disk</em></span>
   <div id="pb"></div>
   <div id="si"></div>
 </div>
@@ -102,8 +103,8 @@ body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;d
   <button class="tbtn" id="brt">⌂ Root</button>
   <div class="tsep"></div>
   <div id="vt">
-    <button class="vb on" data-v="tree">Tree+Icicle</button>
-    <button class="vb" data-v="map">Icicle</button>
+    <button class="vb on" data-v="tree">Tree+Flame</button>
+    <button class="vb" data-v="map">Flame</button>
     <button class="vb" data-v="list">List</button>
   </div>
   <div class="tsep"></div>
@@ -121,7 +122,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;d
   <div id="rz"></div>
   <div id="mp">
     <div id="mh">
-      Icicle — <strong id="mt2"></strong>
+      Flame — <strong id="mt2"></strong>
       <span class="hint">Click to drill in · Esc / ▲ Up to go back</span>
     </div>
     <div id="mc"></div>
