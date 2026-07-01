@@ -11,3 +11,4 @@ venv/
 flamedisk_*.html
 # But keep the package template
 !flamedisk/template.html
+_site/
