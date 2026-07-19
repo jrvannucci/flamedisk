@@ -29,9 +29,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/JonVannucci/flamedisk"
-Repository = "https://github.com/JonVannucci/flamedisk"
-Changelog = "https://github.com/JonVannucci/flamedisk/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/cryocliff/flamedisk"
+Repository = "https://github.com/cryocliff/flamedisk"
+Changelog = "https://github.com/cryocliff/flamedisk/blob/main/CHANGELOG.md"
 
 [project.scripts]
 flamedisk = "flamedisk.cli:main"

@@ -73,3 +73,21 @@ def test_project_urls_present():
     assert "[project.urls]" in text
     for key in ("Homepage", "Repository", "Changelog"):
         assert re.search(rf"^{key}\s*=", text, re.M), f"missing {key} URL"
+
+
+def test_repo_urls_agree_across_files():
+    """pyproject and README must name the same GitHub repo.
+
+    The repo was renamed once (JonVannucci -> cryocliff) and the URLs were left
+    pointing at the old owner; GitHub redirected, so nothing visibly broke
+    while the metadata quietly went stale. [project.urls] is baked into each
+    PyPI release, so drift here is only noticed long after it matters.
+    """
+    pattern = re.compile(r"github\.com/([^/\s\"']+/[^/\s\"')]+?)(?:\.git)?(?=[/\s\"')]|$)")
+    found = {}
+    for name in ("pyproject.toml", "README.md"):
+        text = (REPO / name).read_text(encoding="utf-8")
+        for slug in pattern.findall(text):
+            found.setdefault(slug, []).append(name)
+    assert found, "no GitHub URLs found at all"
+    assert len(found) == 1, f"conflicting repo URLs: {found}"

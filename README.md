@@ -122,7 +122,7 @@ Type in the search box (top-right) to highlight matching entries across all view
 ## Install from source
 
 ```bash
-git clone https://github.com/JonVannucci/flamedisk
+git clone https://github.com/cryocliff/flamedisk
 cd flamedisk
 pip install -e ".[dev]"
 ```
