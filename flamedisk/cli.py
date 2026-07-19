@@ -34,7 +34,7 @@ from pathlib import Path
 
 from . import __version__
 from .scanner import scan
-from .renderer import render_html, write_html
+from .renderer import write_html
 
 
 # ── helpers ───────────────────────────────────────────────────────────────

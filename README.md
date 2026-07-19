@@ -122,10 +122,21 @@ Type in the search box (top-right) to highlight matching entries across all view
 ## Install from source
 
 ```bash
-git clone https://github.com/you/flamedisk
+git clone https://github.com/JonVannucci/flamedisk
 cd flamedisk
-pip install -e .
+pip install -e ".[dev]"
 ```
+
+## Development
+
+```bash
+pytest              # run the test suite
+ruff check .        # lint
+```
+
+Tests run on Linux, macOS, and Windows across Python 3.9–3.13 in CI. Symlink
+tests skip automatically where the environment cannot create symlinks (Windows
+without Developer Mode).
 
 ## License
 

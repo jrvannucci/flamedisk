@@ -4,11 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "flamedisk"
-version = "0.7.2"
+dynamic = ["version"]
 description = "Flame-graph & treemap disk-usage visualiser"
+readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
+authors = [{ name = "Jon Vannucci", email = "JRVannucci@gmail.com" }]
 keywords = ["disk", "usage", "flamegraph", "treemap", "storage", "du"]
+dependencies = []
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -20,16 +23,25 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: System :: Filesystems",
     "Topic :: Utilities",
 ]
+
+[project.urls]
+Homepage = "https://github.com/JonVannucci/flamedisk"
+Repository = "https://github.com/JonVannucci/flamedisk"
+Changelog = "https://github.com/JonVannucci/flamedisk/blob/main/CHANGELOG.md"
 
 [project.scripts]
 flamedisk = "flamedisk.cli:main"
 
 [project.optional-dependencies]
 rich = ["rich>=13"]
-dev  = ["ruff>=0.4"]
+dev  = ["ruff>=0.4", "pytest>=7"]
+
+[tool.setuptools.dynamic]
+version = { attr = "flamedisk.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["."]
@@ -41,3 +53,9 @@ flamedisk = ["py.typed", "template.html"]
 [tool.ruff]
 line-length = 100
 target-version = "py39"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# tests/ is on sys.path so `from conftest import ...` resolves for helpers.
+pythonpath = ["tests"]
+addopts = "-q --strict-markers"

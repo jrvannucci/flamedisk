@@ -26,9 +26,9 @@ jobs:
       - name: Verify tag matches package version
         run: |
           TAG="${GITHUB_REF_NAME#v}"
-          PKG=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          PKG=$(python -c "import re,pathlib; print(re.search(r'__version__ = \"([^\"]+)\"', pathlib.Path('flamedisk/__init__.py').read_text()).group(1))")
           if [ "$TAG" != "$PKG" ]; then
-            echo "Tag $TAG does not match pyproject.toml version $PKG"
+            echo "Tag $TAG does not match flamedisk/__init__.py version $PKG"
             exit 1
           fi
 

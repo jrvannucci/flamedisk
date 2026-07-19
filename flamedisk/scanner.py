@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import os
 import stat
-from concurrent.futures import ThreadPoolExecutor, as_completed, Future
+from concurrent.futures import ThreadPoolExecutor, Future
 from dataclasses import dataclass, field
 from typing import List, Optional
 
@@ -151,13 +151,17 @@ def _scan_dir(
     node = Node(name=name, path=path if depth == 0 else "", is_dir=True)
 
     if max_depth and depth >= max_depth:
-        node.size = _dir_size_fast(path)
+        node.size = _dir_size_fast(path, exclude_set)
         return node
 
     try:
         with os.scandir(path) as it:
             entries = list(it)
-    except PermissionError as exc:
+    except OSError as exc:
+        # Any OSError, not just PermissionError: directories vanish mid-scan
+        # (FileNotFoundError), turn out not to be directories
+        # (NotADirectoryError), or fail on stale network handles.  Record the
+        # error on this node and keep scanning the rest of the tree.
         node.error = str(exc)
         return node
 
@@ -172,8 +176,10 @@ def _scan_dir(
             # One stat call; covers dir, symlink, and size.
             st = entry.stat(follow_symlinks=follow_symlinks)
             mode = st.st_mode
-        except OSError:
-            node.children.append(Node(name=entry.name, path="", size=0, error="stat failed"))
+        except OSError as exc:
+            # Keep the real message — "stat failed" told the user nothing about
+            # whether this was a permissions problem, a broken link, or a race.
+            node.children.append(Node(name=entry.name, path="", size=0, error=str(exc)))
             continue
 
         is_lnk = entry.is_symlink()
@@ -206,9 +212,14 @@ def _scan_dir(
             if sz >= min_size:
                 node.children.append(Node(name=entry.name, path="", size=sz))
 
-    # Collect directory results
+    # Collect directory results.  A worker that dies unexpectedly must not
+    # take the whole scan with it — record the failure on a stub node and
+    # carry on with the remaining subtrees.
     for _ep, _en, fut in dir_futures:
-        child = fut.result()
+        try:
+            child = fut.result()
+        except OSError as exc:
+            child = Node(name=_en, path="", is_dir=True, error=str(exc))
         node.size += child.size
         node.children.append(child)
 
@@ -234,13 +245,13 @@ def _scan_dir_sync(
     node = Node(name=name, path="", is_dir=True)
 
     if max_depth and depth >= max_depth:
-        node.size = _dir_size_fast(path)
+        node.size = _dir_size_fast(path, exclude_set)
         return node
 
     try:
         with os.scandir(path) as it:
             entries = list(it)
-    except PermissionError as exc:
+    except OSError as exc:
         node.error = str(exc)
         return node
 
@@ -251,8 +262,10 @@ def _scan_dir_sync(
         try:
             st = entry.stat(follow_symlinks=follow_symlinks)
             mode = st.st_mode
-        except OSError:
-            node.children.append(Node(name=entry.name, path="", size=0, error="stat failed"))
+        except OSError as exc:
+            # Keep the real message — "stat failed" told the user nothing about
+            # whether this was a permissions problem, a broken link, or a race.
+            node.children.append(Node(name=entry.name, path="", size=0, error=str(exc)))
             continue
 
         is_lnk = entry.is_symlink()
@@ -285,8 +298,17 @@ def _scan_dir_sync(
     return node
 
 
-def _dir_size_fast(path: str) -> int:
-    """Iterative byte-count with no Node allocation (used at max-depth cutoff)."""
+def _dir_size_fast(path: str, exclude_set: set[str]) -> int:
+    """Iterative byte-count with no Node allocation (used at max-depth cutoff).
+
+    ``exclude_set`` is applied at every level, matching the behaviour of the
+    full-tree walk.  Without it, excluded names below the depth cutoff would
+    still be counted, making ``--depth`` and ``--exclude`` give wrong totals
+    when combined.
+
+    ``min_size`` is deliberately *not* applied: in the full walk it only prunes
+    nodes from the returned tree, never from the accumulated byte total.
+    """
     total = 0
     stack = [path]
     while stack:
@@ -294,6 +316,8 @@ def _dir_size_fast(path: str) -> int:
         try:
             with os.scandir(cur) as it:
                 for entry in it:
+                    if entry.name in exclude_set:
+                        continue
                     try:
                         if entry.is_dir(follow_symlinks=False):
                             stack.append(entry.path)

@@ -28,6 +28,11 @@ body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;d
 .ps.cur{color:var(--tx);cursor:default}
 #si{font-size:11px;color:var(--mt);white-space:nowrap;font-family:var(--mono)}
 #si strong{color:var(--ac)}
+#errb{display:none;align-items:center;gap:5px;height:22px;padding:0 8px;border-radius:3px;border:1px solid var(--yw);background:rgba(249,226,175,.12);color:var(--yw);font-size:11px;font-family:var(--mono);white-space:nowrap;cursor:help;flex-shrink:0}
+#errb:hover{background:rgba(249,226,175,.2)}
+.ewarn{color:var(--yw);font-size:11px;margin-right:4px;flex-shrink:0;cursor:help}
+.ttelist{margin-top:4px;padding-top:4px;border-top:1px solid var(--bd);font-size:10px;line-height:1.5;white-space:normal}
+.ttelist div{color:var(--mt);word-break:break-all;margin-bottom:2px}
 #tb{height:32px;background:var(--sf2);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:4px;padding:0 8px;flex-shrink:0}
 .tbtn{height:22px;padding:0 10px;border-radius:3px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);font-size:12px;cursor:pointer;font-family:var(--ui);white-space:nowrap;transition:border-color .1s}
 .tbtn:hover{border-color:var(--ac)}
@@ -96,6 +101,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--ui);font-size:13px;d
 <div id="hd">
   <span class="logo"><span class="fl">flame</span><em>disk</em></span>
   <div id="pb"></div>
+  <div id="errb"></div>
   <div id="si"></div>
 </div>
 <div id="tb">
@@ -150,6 +156,33 @@ function _build(id){
           p:id===0?(_D.P||""):"",c:kids,e:_errs[id]||null};
 }
 const ROOT=_build(0);
+/* ── scan errors ──
+   Entries that could not be read. Their bytes are missing from every total,
+   so the report must say so rather than showing a silent undercount.
+   Paths are reconstructed here (only the root carries a stored path) and only
+   when errors exist, so the common zero-error case costs nothing. */
+const ERRORS=(function(){
+  const ids=Object.keys(_errs);
+  if(!ids.length) return [];
+  const rootPath=_D.P||_D.N[0]||"";
+  /* Match the platform separator of the scanned root so reconstructed paths
+     are copy-pasteable: a Windows root has backslashes and no forward slash. */
+  const sep=rootPath.indexOf("\\")>=0&&rootPath.indexOf("/")<0?"\\":"/";
+  const want=new Set(ids.map(Number));
+  const out=[];
+  (function walk(id,prefix){
+    let path;
+    if(prefix===null){
+      path=rootPath.replace(/[\\/]+$/,"")||rootPath;
+    } else {
+      path=prefix+sep+_D.N[id];
+    }
+    if(want.has(id)) out.push({path:path,msg:_errs[id]});
+    const kids=_D.C[id]||[];
+    for(let i=0;i<kids.length;i++) walk(kids[i],path);
+  })(0,null);
+  return out;
+})();
 /* ── state ── */
 let vr=ROOT,nav=[],sel=null,sq="",zr=null;
 /* ── palette ── */
@@ -221,6 +254,7 @@ function buildTree(node,parentEl,depth,parentSz,sibIdx,sibCount,rootSz){
     `<div class="trg${hasC?" ":""}">${hasC?"▶":""}</div>`+
     `<div class="tric">${node.d?"📁":ficon(node.n)}</div>`+
     `<div class="trn" title="${esc(node.n)}">${esc(node.n)}</div>`+
+    (node.e?`<span class="ewarn" title="${esc(node.e)}">⚠</span>`:"")+
     `<div class="trbw"><div class="trb" style="width:${bw}px;background:${col}"></div></div>`+
     `<div class="trs">${fmt(node.s)}</div>`+
     `<div class="trp">${pct(node.s,baseSz)}</div>`;
@@ -431,6 +465,9 @@ function renderIcicle(){
       const inZoom=!zr||zoomSet.has(node);
       const col=ec(node,depth,sibIdx,sibCount);
       const cell=document.createElement("div");
+      /* No error marker here on purpose: an entry that failed to read always
+         has size 0, so it is sub-pixel and pruned before it reaches this
+         point. Errors surface via the header banner and the tree panel. */
       cell.className="ic"+(sq?matchSq(node)?" smatch":" sdim":"")
         +(sel&&(sel.p||sel.n)===(node.p||node.n)?" sel":"")
         +(zr&&!inZoom?" sdim":"");
@@ -506,13 +543,19 @@ function selectNode(nd,rowEl){
   if(rowEl) rowEl.classList.add("sel");
   const si=document.getElementById("seli");
   const fp=nd.p||nd.n;
-  si.innerHTML=`<span class="hl">${esc(nd.n)}</span> · ${fmt(nd.s)} · ${pct(nd.s,vr.s)} of view · ${nd.d?"Directory":"File"} · <span style="color:var(--mt)">${esc(fp)}</span>`;
+  si.innerHTML=`<span class="hl">${esc(nd.n)}</span> · ${fmt(nd.s)} · ${pct(nd.s,vr.s)} of view · ${nd.d?"Directory":"File"} · <span style="color:var(--mt)">${esc(fp)}</span>`
+    +(nd.e?` · <span style="color:var(--yw)">⚠ ${esc(nd.e)}</span>`:"");
 }
 /* ── legend ── */
 function updateLegend(visibleItems){
   /* Use the BFS-collected visible items rather than a fresh tree walk */
   const counts={};
   for(const {node} of visibleItems){
+    /* Overflow placeholders carry node:null. Dereferencing them threw, which
+       aborted renderIcicle before updatePB() ran — silently blanking the
+       breadcrumb, the size counter, and this legend on any tree with
+       sub-pixel entries (i.e. almost every real scan). */
+    if(!node) continue;
     if(!node.d){
       const c=fileColor(node.n);
       counts[c]=(counts[c]||0)+node.s;
@@ -614,6 +657,30 @@ window.addEventListener("keydown",e=>{
   }
 });
 window.addEventListener("resize",renderIcicle);
+/* ── unreadable-entry banner ──
+   Without this the report shows a confident total that silently omits
+   whatever could not be read. */
+function initErrorBanner(){
+  if(!ERRORS.length) return;
+  const el=document.getElementById("errb");
+  const n=ERRORS.length;
+  el.style.display="flex";
+  el.textContent=`⚠ ${n} unreadable`;
+  el.title=`${n} entr${n>1?"ies":"y"} could not be read — totals are understated`;
+  const shown=ERRORS.slice(0,10);
+  el.addEventListener("mouseenter",e=>{
+    ttEl.innerHTML=`<div class="ttn">⚠ ${n} unreadable entr${n>1?"ies":"y"}</div>`
+      +`<div class="ttp">Their contents are missing from every size shown.</div>`
+      +`<div class="ttelist">`
+      +shown.map(x=>`<div>${esc(x.path)}<br/><span style="color:var(--yw)">${esc(x.msg)}</span></div>`).join("")
+      +(n>shown.length?`<div>… and ${n-shown.length} more</div>`:"")
+      +`</div>`;
+    ttEl.style.display="block"; moveTT(e);
+  });
+  el.addEventListener("mousemove",moveTT);
+  el.addEventListener("mouseleave",()=>{ttEl.style.display="none";});
+}
+initErrorBanner();
 renderAll();
 })();
 </script>
