@@ -160,12 +160,19 @@ TEMPLATE = """\
 
 
 def read_version() -> str:
-    try:
-        import tomllib  # Python 3.11+
-    except ImportError:
-        import tomli as tomllib  # type: ignore[no-reuse-of-unused-import]
-    with open(ROOT / "pyproject.toml", "rb") as f:
-        return tomllib.load(f)["project"]["version"]
+    """Read the version from flamedisk/__init__.py.
+
+    pyproject.toml declares the version dynamically (via
+    tool.setuptools.dynamic), so there is no literal project.version key to
+    read. flamedisk.__version__ is the single source of truth; the publish
+    workflow's tag check reads the same place.
+    """
+    init = ROOT / "flamedisk" / "__init__.py"
+    m = re.search(r'^__version__\s*=\s*["\']([^"\']+)["\']',
+                  init.read_text(encoding="utf-8"), re.M)
+    if not m:
+        raise RuntimeError(f"could not find __version__ in {init}")
+    return m.group(1)
 
 
 def convert(md_text: str, img_prefix: str = "") -> tuple[str, str]:
