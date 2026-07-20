@@ -1,17 +1,54 @@
+# Byte-compiled / cache
 __pycache__/
 *.py[cod]
+*$py.class
+
+# Packaging / build output
+build/
+dist/
 *.egg-info/
 .eggs/
-dist/
-build/
+# Compiled extension modules (e.g. a future PyO3 scanner backend)
+*.so
+*.pyd
+
+# Virtual environments
 .venv/
 venv/
+env/
+ENV/
+
+# Test, lint and type-check caches
+.pytest_cache/
 .ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+
+# Coverage output
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
 # Generated report files
 flamedisk_*.html
-# But keep the package template
+# Belt and braces. The pattern above cannot actually match the packaged
+# template (its basename is template.html), but 0.7.0 shipped a bug where
+# the template was ignored, so the guard stays.
 !flamedisk/template.html
+
+# Built docs site
 _site/
 
-# benchmark output
+# Benchmark output
 bench/out/
+
+# Editor / IDE
+.idea/
+.vscode/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+desktop.ini
