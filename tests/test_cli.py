@@ -9,11 +9,9 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 import pytest
-
-from flamedisk.cli import _fmt, _parse_size, build_parser, main
-
 from conftest import TREE_TOTAL
 
+from flamedisk.cli import _fmt, _parse_size, build_parser, main
 
 # ── _parse_size ───────────────────────────────────────────────────────────
 

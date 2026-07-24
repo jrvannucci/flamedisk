@@ -34,9 +34,8 @@ import webbrowser
 from pathlib import Path
 
 from . import __version__
-from .scanner import scan
 from .renderer import write_html
-
+from .scanner import scan
 
 # ── helpers ───────────────────────────────────────────────────────────────
 

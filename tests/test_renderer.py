@@ -7,11 +7,10 @@ import json
 from pathlib import Path
 
 import pytest
+from conftest import TREE_TOTAL
 
 from flamedisk import Node, render_html, scan, write_html
 from flamedisk.renderer import _encode_tree, _esc, _minify, render_html_gz
-
-from conftest import TREE_TOTAL
 
 
 def decode(root: Node) -> dict:

@@ -29,10 +29,8 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Optional
 
 from .scanner import Node
-
 
 # ---------------------------------------------------------------------------
 # Payload encoding
@@ -88,7 +86,7 @@ def _encode_tree(root: Node) -> str:
 # ---------------------------------------------------------------------------
 
 
-def render_html(root: Node, title: Optional[str] = None) -> str:
+def render_html(root: Node, title: str | None = None) -> str:
     """Render *root* as a self-contained HTML string.
 
     Args:
@@ -103,7 +101,7 @@ def render_html(root: Node, title: Optional[str] = None) -> str:
     return _TEMPLATE.replace("__TITLE__", _esc(title)).replace("__DATA__", data)
 
 
-def render_html_gz(root: Node, title: Optional[str] = None) -> bytes:
+def render_html_gz(root: Node, title: str | None = None) -> bytes:
     """Like :func:`render_html` but returns gzip-compressed bytes.
 
     Useful when serving the report over HTTP
@@ -114,7 +112,7 @@ def render_html_gz(root: Node, title: Optional[str] = None) -> bytes:
     return gzip.compress(render_html(root, title).encode("utf-8"), compresslevel=9)
 
 
-def write_html(root: Node, output: str, title: Optional[str] = None) -> None:
+def write_html(root: Node, output: str, title: str | None = None) -> None:
     """Write the HTML report to *output*.
 
     Args:

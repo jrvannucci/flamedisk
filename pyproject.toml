@@ -54,6 +54,14 @@ flamedisk = ["py.typed", "template.html"]
 line-length = 100
 target-version = "py39"
 
+[tool.ruff.lint]
+# Pin the rule set explicitly so linting is reproducible everywhere. Without a
+# `select`, ruff's default set is environment-dependent and CI was flagging
+# rules a bare local run did not. E/F are the pycodestyle+pyflakes baseline; I
+# sorts imports; UP modernises typing (safe here because every module uses
+# `from __future__ import annotations`).
+select = ["E", "F", "I", "UP"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # tests/ is on sys.path so `from conftest import ...` resolves for helpers.

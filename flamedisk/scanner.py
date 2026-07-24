@@ -28,9 +28,8 @@ from __future__ import annotations
 
 import os
 import stat
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 
 @dataclass
@@ -51,9 +50,9 @@ class Node:
     name: str
     path: str
     size: int = 0
-    children: List["Node"] = field(default_factory=list)
+    children: list[Node] = field(default_factory=list)
     is_dir: bool = False
-    error: Optional[str] = None
+    error: str | None = None
 
     def to_dict(self) -> dict:
         """Return a compact JSON-serialisable representation.
@@ -79,7 +78,7 @@ def scan(
     max_depth: int = 0,
     min_size: int = 0,
     follow_symlinks: bool = False,
-    exclude: Optional[List[str]] = None,
+    exclude: list[str] | None = None,
     workers: int = 0,
 ) -> Node:
     """Recursively scan *root* and return a :class:`Node` tree.

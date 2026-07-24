@@ -10,10 +10,6 @@ import os
 from pathlib import Path
 
 import pytest
-
-from flamedisk import Node, scan
-from flamedisk.scanner import _dir_size_fast
-
 from conftest import (
     BIG_TOTAL,
     DEEP_TOTAL,
@@ -23,6 +19,8 @@ from conftest import (
     write,
 )
 
+from flamedisk import Node, scan
+from flamedisk.scanner import _dir_size_fast
 
 # ── basic totals ──────────────────────────────────────────────────────────
 
