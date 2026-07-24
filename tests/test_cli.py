@@ -1,4 +1,5 @@
 """CLI tests — size parsing, argument handling, and end-to-end invocation."""
+
 from __future__ import annotations
 
 import argparse
@@ -15,6 +16,7 @@ from conftest import TREE_TOTAL
 
 
 # ── _parse_size ───────────────────────────────────────────────────────────
+
 
 @pytest.mark.parametrize(
     "text,expected",
@@ -53,6 +55,7 @@ def test_parse_size_prefers_longest_suffix():
 
 # ── _fmt ──────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.parametrize(
     "nbytes,expected",
     [
@@ -75,6 +78,7 @@ def test_fmt_caps_at_tb():
 
 
 # ── argument parsing ──────────────────────────────────────────────────────
+
 
 def test_defaults():
     args = build_parser().parse_args([])
@@ -112,6 +116,7 @@ def test_version_exits_zero(capsys):
 
 
 # ── end-to-end ────────────────────────────────────────────────────────────
+
 
 def test_main_writes_html(tree: Path, tmp_path: Path):
     out = tmp_path / "report.html"

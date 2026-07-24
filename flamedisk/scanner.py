@@ -23,6 +23,7 @@ Performance notes
   ``entry.is_symlink()`` double-call.
 * Sorting is deferred to after all children are collected.
 """
+
 from __future__ import annotations
 
 import os
@@ -118,8 +119,13 @@ def scan(
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
         root_node = _scan_dir(
-            root, root_name, 0,
-            max_depth, min_size, follow_symlinks, exclude_set,
+            root,
+            root_name,
+            0,
+            max_depth,
+            min_size,
+            follow_symlinks,
+            exclude_set,
             pool,
         )
 
@@ -129,6 +135,7 @@ def scan(
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _scan_dir(
     path: str,
@@ -202,8 +209,13 @@ def _scan_dir(
             # block waiting for pool capacity — deadlock is impossible.
             fut = pool.submit(
                 _scan_dir_sync,
-                entry.path, entry.name, depth + 1,
-                max_depth, min_size, follow_symlinks, exclude_set,
+                entry.path,
+                entry.name,
+                depth + 1,
+                max_depth,
+                min_size,
+                follow_symlinks,
+                exclude_set,
             )
             dir_futures.append((entry.path, entry.name, fut))
         else:
@@ -283,8 +295,13 @@ def _scan_dir_sync(
 
         if is_dir:
             child = _scan_dir_sync(
-                entry.path, entry.name, depth + 1,
-                max_depth, min_size, follow_symlinks, exclude_set,
+                entry.path,
+                entry.name,
+                depth + 1,
+                max_depth,
+                min_size,
+                follow_symlinks,
+                exclude_set,
             )
             node.size += child.size
             node.children.append(child)

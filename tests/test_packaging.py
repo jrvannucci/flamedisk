@@ -4,6 +4,7 @@ The version is declared dynamically in pyproject.toml, which means anything
 reading ``project.version`` from that file gets a KeyError. That broke the docs
 workflow once already; these tests catch a recurrence without needing CI.
 """
+
 from __future__ import annotations
 
 import re

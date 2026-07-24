@@ -3,6 +3,7 @@
 The scanner's whole job is producing correct byte totals, so most of these
 assert on exact sizes against the `tree` fixture rather than on structure.
 """
+
 from __future__ import annotations
 
 import os
@@ -24,6 +25,7 @@ from conftest import (
 
 
 # ── basic totals ──────────────────────────────────────────────────────────
+
 
 def test_total_size(tree: Path):
     assert scan(str(tree)).size == TREE_TOTAL
@@ -82,6 +84,7 @@ def test_worker_count_does_not_change_totals(tree: Path, workers: int):
 
 # ── exclude ───────────────────────────────────────────────────────────────
 
+
 def test_exclude_top_level(tree: Path):
     root = scan(str(tree), exclude=["big"])
     assert root.size == TREE_TOTAL - BIG_TOTAL
@@ -96,6 +99,7 @@ def test_exclude_applies_at_any_depth(tree: Path):
 
 
 # ── max_depth ─────────────────────────────────────────────────────────────
+
 
 def test_depth_limit_truncates_tree_but_not_totals(tree: Path):
     """Nodes below the cutoff are dropped, but their bytes still count."""
@@ -116,6 +120,7 @@ def test_total_is_depth_invariant(tree: Path, depth: int):
 
 
 # ── regression: exclude below the depth cutoff ────────────────────────────
+
 
 @pytest.mark.parametrize("depth", [1, 2, 3])
 def test_exclude_honoured_below_depth_cutoff(tree: Path, depth: int):
@@ -143,11 +148,12 @@ def test_dir_size_fast_applies_exclude(tree: Path):
 
 # ── min_size ──────────────────────────────────────────────────────────────
 
+
 def test_min_size_prunes_nodes_but_not_totals(tree: Path):
     """min_size is a display filter: bytes are counted before the check."""
     root = scan(str(tree), min_size=10_000)
     assert root.size == TREE_TOTAL
-    assert find_child(root, "a.txt") is None          # 1000 < 10000, pruned
+    assert find_child(root, "a.txt") is None  # 1000 < 10000, pruned
     assert find_child(find_child(root, "big"), "b.bin") is not None  # 20000, kept
 
 
@@ -159,6 +165,7 @@ def test_min_size_does_not_prune_directories(tree: Path):
 
 
 # ── regression: mid-scan OSError ──────────────────────────────────────────
+
 
 @pytest.mark.parametrize(
     "exc",
@@ -393,6 +400,7 @@ def test_entry_stat_failure_is_recorded(tree: Path, monkeypatch):
 
 # ── symlinks ──────────────────────────────────────────────────────────────
 
+
 @needs_symlinks
 def test_symlinked_dir_not_descended_by_default(tmp_path: Path):
     target = tmp_path / "target"
@@ -439,6 +447,7 @@ def test_follow_symlinks_descends(tmp_path: Path):
 
 # ── Node.to_dict ──────────────────────────────────────────────────────────
 
+
 def test_to_dict_uses_compact_keys(tree: Path):
     d = scan(str(tree)).to_dict()
     assert d["n"] == "root"
@@ -459,10 +468,12 @@ def test_to_dict_includes_error():
 
 def test_to_dict_is_json_serialisable(tree: Path):
     import json
+
     json.dumps(scan(str(tree)).to_dict())
 
 
 # ── unicode / odd names ───────────────────────────────────────────────────
+
 
 def test_unicode_and_spaced_names(tmp_path: Path):
     root = tmp_path / "root"

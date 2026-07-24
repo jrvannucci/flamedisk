@@ -4,6 +4,7 @@ Sizes throughout the suite are deliberately distinct powers-of-ten-ish values
 so that a wrong total identifies *which* file was miscounted, not just that
 the number is off.
 """
+
 from __future__ import annotations
 
 import os
@@ -84,6 +85,5 @@ SYMLINKS_SUPPORTED = _supports_symlinks()
 
 needs_symlinks = pytest.mark.skipif(
     not SYMLINKS_SUPPORTED,
-    reason="this process cannot create symlinks "
-           "(Windows needs Developer Mode or elevation)",
+    reason="this process cannot create symlinks (Windows needs Developer Mode or elevation)",
 )

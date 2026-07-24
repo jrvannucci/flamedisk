@@ -23,6 +23,7 @@ rebuilds into the tree in O(n) at startup.
 :func:`render_html_gz` returns the same document gzip-compressed, for serving
 over HTTP with a ``Content-Encoding: gzip`` header.
 """
+
 from __future__ import annotations
 
 import json
@@ -37,6 +38,7 @@ from .scanner import Node
 # Payload encoding
 # ---------------------------------------------------------------------------
 
+
 def _encode_tree(root: Node) -> str:
     """Serialise *root* as a compact columnar JSON string.
 
@@ -49,11 +51,11 @@ def _encode_tree(root: Node) -> str:
     * ``P`` – path string, stored only for the root (index 0)
     * ``E`` – ``{node_id: error_string}`` for nodes that had errors (usually empty)
     """
-    names:    list[str]       = []
-    sizes:    list[int]       = []
-    dirs:     list[int]       = []
+    names: list[str] = []
+    sizes: list[int] = []
+    dirs: list[int] = []
     children: list[list[int]] = []
-    errors:   dict[int, str]  = {}
+    errors: dict[int, str] = {}
     root_path = root.path or ""
 
     def _visit(node: Node) -> int:
@@ -65,7 +67,7 @@ def _encode_tree(root: Node) -> str:
             dirs.append(idx)
         if node.error:
             errors[idx] = node.error
-        children.append([])          # placeholder; filled after recursion
+        children.append([])  # placeholder; filled after recursion
         for child in node.children:
             children[idx].append(_visit(child))
         return idx
@@ -85,6 +87,7 @@ def _encode_tree(root: Node) -> str:
 # Public API
 # ---------------------------------------------------------------------------
 
+
 def render_html(root: Node, title: Optional[str] = None) -> str:
     """Render *root* as a self-contained HTML string.
 
@@ -96,12 +99,8 @@ def render_html(root: Node, title: Optional[str] = None) -> str:
         str: Complete HTML document, ready to write to a ``.html`` file.
     """
     title = title or f"flamedisk \u2014 {root.path}"
-    data  = _encode_tree(root)
-    return (
-        _TEMPLATE
-        .replace("__TITLE__", _esc(title))
-        .replace("__DATA__", data)
-    )
+    data = _encode_tree(root)
+    return _TEMPLATE.replace("__TITLE__", _esc(title)).replace("__DATA__", data)
 
 
 def render_html_gz(root: Node, title: Optional[str] = None) -> bytes:
@@ -111,6 +110,7 @@ def render_html_gz(root: Node, title: Optional[str] = None) -> bytes:
     (set ``Content-Encoding: gzip``).
     """
     import gzip
+
     return gzip.compress(render_html(root, title).encode("utf-8"), compresslevel=9)
 
 
@@ -129,10 +129,15 @@ def write_html(root: Node, output: str, title: Optional[str] = None) -> None:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _esc(s: str) -> str:
-    return (str(s)
-            .replace("&", "&amp;").replace("<", "&lt;")
-            .replace(">", "&gt;").replace('"', "&quot;"))
+    return (
+        str(s)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
 
 
 def _minify(html: str) -> str:
@@ -161,7 +166,6 @@ def _minify(html: str) -> str:
 
 # Template is loaded from template.html (alongside this file) and
 # minified once at import time.
-_RAW_TEMPLATE = (Path(__file__).with_name("template.html")
-                 .read_text(encoding="utf-8"))
+_RAW_TEMPLATE = Path(__file__).with_name("template.html").read_text(encoding="utf-8")
 
 _TEMPLATE = _minify(_RAW_TEMPLATE)

@@ -21,6 +21,7 @@ To pass a path *after* ``--exclude``, use ``--`` to end option parsing::
 
     flamedisk --exclude .git node_modules -- "/path with spaces"
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,6 +39,7 @@ from .renderer import write_html
 
 
 # ── helpers ───────────────────────────────────────────────────────────────
+
 
 def _fmt(n: int) -> str:
     """Human-readable byte count (e.g. ``1.23 GB``)."""
@@ -68,8 +70,15 @@ def _parse_size(s: str) -> int:
     if not s or s == "0":
         return 0
     multipliers = {
-        "tb": 1024**4, "gb": 1024**3, "mb": 1024**2, "kb": 1024, "b": 1,
-        "t":  1024**4, "g":  1024**3, "m":  1024**2, "k":  1024,
+        "tb": 1024**4,
+        "gb": 1024**3,
+        "mb": 1024**2,
+        "kb": 1024,
+        "b": 1,
+        "t": 1024**4,
+        "g": 1024**3,
+        "m": 1024**2,
+        "k": 1024,
     }
     lower = s.lower()
     for suffix, mult in sorted(multipliers.items(), key=lambda x: -len(x[0])):
@@ -85,6 +94,7 @@ def _parse_size(s: str) -> int:
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────
+
 
 def build_parser() -> argparse.ArgumentParser:
     """Return the argument parser (exposed for Sphinx autodoc)."""
@@ -105,54 +115,76 @@ Examples
 """,
     )
     p.add_argument(
-        "path", nargs="?", default=".",
+        "path",
+        nargs="?",
+        default=".",
         help="Directory to scan (default: current directory). "
-             "Quote paths that contain spaces: flamedisk '/my dir'",
+        "Quote paths that contain spaces: flamedisk '/my dir'",
     )
     p.add_argument(
-        "-o", "--output", metavar="FILE",
+        "-o",
+        "--output",
+        metavar="FILE",
         help="Write HTML output to FILE (default: a temp file).",
     )
     p.add_argument(
-        "--depth", type=int, default=0, metavar="N",
+        "--depth",
+        type=int,
+        default=0,
+        metavar="N",
         help="Maximum scan depth; 0 means unlimited (default: 0).",
     )
     p.add_argument(
-        "--min-size", default="0", metavar="BYTES",
+        "--min-size",
+        default="0",
+        metavar="BYTES",
         help="Ignore files smaller than this, e.g. 1MB, 512KB (default: 0).",
     )
     p.add_argument(
-        "--exclude", nargs="+", default=[], metavar="NAME",
+        "--exclude",
+        nargs="+",
+        default=[],
+        metavar="NAME",
         # Changed from nargs="*" → nargs="+" so argparse does not greedily
         # consume a trailing positional (the path) as an exclude name.
         # Use -- to separate --exclude list from a spaced path, e.g.:
         #   flamedisk --exclude .git node_modules -- "/my dir"
         help="Entry names to skip, e.g. --exclude .git node_modules __pycache__ "
-             "(use -- before path if the path follows: --exclude .git -- '/my dir')",
+        "(use -- before path if the path follows: --exclude .git -- '/my dir')",
     )
     p.add_argument(
-        "--follow-symlinks", action="store_true",
+        "--follow-symlinks",
+        action="store_true",
         help="Follow symbolic links (beware of cycles).",
     )
     p.add_argument(
-        "--workers", type=int, default=0, metavar="N",
+        "--workers",
+        type=int,
+        default=0,
+        metavar="N",
         help="Thread-pool size for parallel scanning (default: auto = cpu_count×4, "
-             "capped at 32). Increase for network/slow storage; lower for HDDs.",
+        "capped at 32). Increase for network/slow storage; lower for HDDs.",
     )
     p.add_argument(
-        "-q", "--no-browser", action="store_true",
+        "-q",
+        "--no-browser",
+        action="store_true",
         help="Do not open a browser window after generating the report.",
     )
     p.add_argument(
-        "--json", action="store_true",
+        "--json",
+        action="store_true",
         help="Print the raw JSON tree to stdout instead of generating HTML.",
     )
     p.add_argument(
-        "--title", metavar="TEXT",
+        "--title",
+        metavar="TEXT",
         help="Custom HTML page title.",
     )
     p.add_argument(
-        "--version", action="version", version=f"flamedisk {__version__}",
+        "--version",
+        action="version",
+        version=f"flamedisk {__version__}",
     )
     return p
 

@@ -12,6 +12,7 @@ The :func:`scan` function returns a :class:`~flamedisk.scanner.Node` tree
 which can be rendered to a self-contained HTML file via :func:`write_html`,
 or consumed programmatically as a plain dict via :meth:`~flamedisk.scanner.Node.to_dict`.
 """
+
 from __future__ import annotations
 
 from .scanner import Node, scan

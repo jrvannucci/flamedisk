@@ -1,4 +1,5 @@
 """Renderer tests — payload encoding, escaping, and template integrity."""
+
 from __future__ import annotations
 
 import gzip
@@ -18,6 +19,7 @@ def decode(root: Node) -> dict:
 
 
 # ── columnar payload ──────────────────────────────────────────────────────
+
 
 def test_payload_arrays_are_parallel(tree: Path):
     p = decode(scan(str(tree)))
@@ -93,6 +95,7 @@ def test_payload_is_compact_json(tree: Path):
 
 # ── HTML output ───────────────────────────────────────────────────────────
 
+
 def test_render_substitutes_placeholders(tree: Path):
     html = render_html(scan(str(tree)), "My Title")
     assert "__DATA__" not in html
@@ -104,7 +107,7 @@ def test_render_is_self_contained(tree: Path):
     """No external fetches — the report must work offline from one file."""
     html = render_html(scan(str(tree)))
     assert "<script src=" not in html
-    assert "<link rel=\"stylesheet\"" not in html
+    assert '<link rel="stylesheet"' not in html
     assert "http://" not in html.replace("http://www.w3.org", "")
 
 
@@ -145,6 +148,7 @@ def test_render_html_gz_roundtrips(tree: Path):
 
 
 # ── minifier ──────────────────────────────────────────────────────────────
+
 
 def test_minify_strips_block_comments():
     assert "gone" not in _minify("a { /* gone */ color: red }")
@@ -206,6 +210,7 @@ def test_template_ships_with_package():
 
 
 # ── deep trees ────────────────────────────────────────────────────────────
+
 
 def test_encodes_a_deep_chain():
     """_encode_tree recurses; make sure a realistically deep tree survives."""
