@@ -10,7 +10,7 @@
 - **Feature**: entries that could not be read are now visible in the report. A header banner shows the count and, on hover, the full path and OS error for each; unreadable rows in the tree panel carry a ⚠ marker; selecting one shows the error in the status bar. Previously these were encoded into the payload but never displayed, so a permission-denied directory was indistinguishable from an empty one and totals were silently understated
 - **Fix**: per-entry stat failures now record the real OS error instead of the literal string `"stat failed"`
 - **Packaging**: added the Python 3.13 classifier
-- **Tests**: added a pytest suite (106 tests) covering the scanner, renderer, and CLI, including regression tests for both fixes above
+- **Tests**: added a pytest suite (~125 tests) covering the scanner, renderer, CLI, and packaging metadata, including regression tests for each fix above
 - **CI**: added a `Tests` workflow running pytest on Linux/macOS/Windows across Python 3.9–3.13, plus a `ruff` lint job
 - **Cleanup**: removed two unused imports (`render_html` in `cli.py`, `as_completed` in `scanner.py`)
 

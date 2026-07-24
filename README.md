@@ -113,6 +113,10 @@ Flat sortable list of the current directory's immediate children. Sort by **Name
 
 Type in the search box (top-right) to highlight matching entries across all views. Matching cells are highlighted; non-matching entries are dimmed.
 
+### Unreadable entries
+
+If an entry can't be read during the scan — permission denied, a directory that vanished mid-scan, a stale network handle — flamedisk records it and keeps going rather than aborting. A ⚠ banner in the header shows how many entries were skipped; hover it for the full path and OS error of each. Affected rows in the tree carry a ⚠ marker, and selecting one shows the error in the status bar. Because the contents of a skipped entry are never counted, the totals shown understate actual disk usage by that amount.
+
 ### Keyboard shortcuts
 
 | Key | Action |

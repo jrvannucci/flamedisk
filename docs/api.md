@@ -42,7 +42,7 @@ Returned by `scan`. Attributes:
 | `size` | `int` | Total size in bytes (directories include all descendants) |
 | `is_dir` | `bool` | `True` for directories |
 | `children` | `list[Node]` | Child nodes, sorted largest-first; empty for files |
-| `error` | `str \| None` | Error message if the entry could not be read (e.g. permission denied) |
+| `error` | `str \| None` | OS error message if the entry could not be read (permission denied, vanished mid-scan, stale network handle, …); `None` otherwise |
 
 ### `Node.to_dict()`
 

@@ -1,41 +1,27 @@
 """
-Renders the disk-usage Node tree as a TreeSize-style interactive HTML page.
+Render a disk-usage :class:`~flamedisk.scanner.Node` tree as a self-contained,
+interactive HTML report — a horizontal flame-graph (icicle chart) alongside a
+sortable file tree.
 
-Optimisations vs v0.1
-----------------------
-* JSON payload uses single-char keys (``n/s/d/p/c/e``) — ~40% smaller.
-* Paths are stored only on the root node; the browser reconstructs them.
-* CSS and JS are minified at import time (strips comments + excess whitespace).
-* ``gzip`` compression available via :func:`render_html_gz` for HTTP serving.
+The output is a single file with all CSS and JS inlined; it needs no server or
+network access. Comments and redundant whitespace are stripped once at import
+time (see :func:`_minify`).
 
-v0.2 visualisation improvements
----------------------------------
-* Right panel replaced with a horizontal **icicle chart** (flame-graph layout):
-  each depth level is a fixed-height row; width is proportional to size.
-  Equal-sized siblings are clearly distinguishable via alternating hue shifts
-  and depth-based brightness.
-* Directories with identical sizes now get visually distinct colours.
-* Hover tooltip shows full path, size, % of parent, and child count.
-* Clicking an icicle cell drills down; Escape / ▲ Up goes back.
-* Tree panel bar widths and % column now reflect proportion of *parent* rather
-  than root, making deep comparisons easier.
-
-v0.5 payload encoding
-----------------------
-The JSON payload is now **columnar** rather than nested-dict per node.
-Four parallel arrays are emitted (indices are node IDs):
+Payload encoding
+----------------
+The node tree is serialised as a **columnar** JSON object rather than a nested
+dict per node: several parallel arrays indexed by node id, which the browser
+rebuilds into the tree in O(n) at startup.
 
   N – name strings
   S – sizes as decimal integers
-  D – set of node indices that are directories (sparse; absent = file)
-  C – children arrays (list of child node-IDs for each node, empty = leaf)
+  D – node ids that are directories (sparse; a missing id is a file)
+  C – children arrays (list of child node ids; empty for leaves)
+  P – path string, stored only for the root (index 0)
+  E – {node id: error message} for entries that could not be read (usually empty)
 
-The JS side reconstructs the tree at startup in O(n).  This saves ~8 % raw
-bytes versus the v0.4 nested format for typical directory trees, and allows
-future delta/varint encoding without changing the JS tree logic.
-
-A ``--gzip`` CLI flag writes a self-decompressing HTML wrapper around a
-base64-gzipped payload, yielding ~75 % size reduction for HTTP serving.
+:func:`render_html_gz` returns the same document gzip-compressed, for serving
+over HTTP with a ``Content-Encoding: gzip`` header.
 """
 from __future__ import annotations
 
