@@ -41,9 +41,6 @@ flamedisk_*.html
 # Built docs site
 _site/
 
-# Benchmark output
-bench/out/
-
 # Editor / IDE
 .idea/
 .vscode/
