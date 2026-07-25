@@ -18,5 +18,5 @@ from __future__ import annotations
 from .renderer import render_html, write_html
 from .scanner import Node, scan
 
-__version__ = "0.7.2"
+__version__ = "1.0.0"
 __all__ = ["scan", "Node", "render_html", "write_html", "__version__"]

@@ -2,7 +2,7 @@
 
 Interactive disk-usage visualiser. Scan a directory and open a self-contained HTML report with a flame graph and sortable file tree — no server required.
 
-![Tree + Flame view](docs/img/tree-flame-view.png)
+![Tree + Flame view](https://raw.githubusercontent.com/jrvannucci/flamedisk/main/docs/img/tree-flame-view.png)
 
 ---
 
@@ -89,25 +89,25 @@ See [docs/api.md](docs/api.md) for the full API reference.
 
 The left panel shows an expandable file tree. The right panel shows a flame graph — each row is a depth level, each cell is a file or directory sized proportionally to disk usage. The root sits at the bottom; deeper entries grow upward.
 
-![Tree + Flame view](docs/img/tree-flame-view.png)
+![Tree + Flame view](https://raw.githubusercontent.com/jrvannucci/flamedisk/main/docs/img/tree-flame-view.png)
 
 ### Flame view
 
 The flame graph fills the full window.
 
-![Flame view](docs/img/flame-view.png)
+![Flame view](https://raw.githubusercontent.com/jrvannucci/flamedisk/main/docs/img/flame-view.png)
 
 ### Zoom
 
 Click any directory cell in the flame graph to zoom into it. The original colours and depth levels are preserved — the view rescales so the selected directory fills the full width. Press **Esc** or click **↺ Reset** to return.
 
-![Zoom and tooltip](docs/img/zoom-tooltip.png)
+![Zoom and tooltip](https://raw.githubusercontent.com/jrvannucci/flamedisk/main/docs/img/zoom-tooltip.png)
 
 ### List view
 
 Flat sortable list of the current directory's immediate children. Sort by **Name**, **Size**, or **Type**. The size bar and percentage column always show each entry's share of the total root directory.
 
-![List view](docs/img/list-view.png)
+![List view](https://raw.githubusercontent.com/jrvannucci/flamedisk/main/docs/img/list-view.png)
 
 ### Search
 
@@ -126,7 +126,7 @@ If an entry can't be read during the scan — permission denied, a directory tha
 ## Install from source
 
 ```bash
-git clone https://github.com/cryocliff/flamedisk
+git clone https://github.com/jrvannucci/flamedisk
 cd flamedisk
 pip install -e ".[dev]"
 ```

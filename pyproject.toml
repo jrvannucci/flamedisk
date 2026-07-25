@@ -13,7 +13,7 @@ authors = [{ name = "Jon Vannucci", email = "JRVannucci@gmail.com" }]
 keywords = ["disk", "usage", "flamegraph", "treemap", "storage", "du"]
 dependencies = []
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
@@ -29,9 +29,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/cryocliff/flamedisk"
-Repository = "https://github.com/cryocliff/flamedisk"
-Changelog = "https://github.com/cryocliff/flamedisk/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/jrvannucci/flamedisk"
+Repository = "https://github.com/jrvannucci/flamedisk"
+Changelog = "https://github.com/jrvannucci/flamedisk/blob/main/CHANGELOG.md"
 
 [project.scripts]
 flamedisk = "flamedisk.cli:main"
