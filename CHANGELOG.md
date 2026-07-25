@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.0 — 2026-07-25
 
 - **Feature**: `--exclude` now accepts glob patterns. An entry containing `*`, `?`, or `[` is matched against each basename (e.g. `--exclude '*.log' '*.tmp'`); entries without glob characters still match names exactly, so existing usage is unchanged. Patterns apply at every depth, including below a `--depth` cutoff. Quote globs so the shell does not expand them.
 - **Feature**: the CLI shows a live progress counter (entries scanned and running byte total) on an interactive terminal, updated as the scan runs. When stderr is redirected (a pipe, a file, CI) it falls back to the previous single static line, so logs stay clean.
