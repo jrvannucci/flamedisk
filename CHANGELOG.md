@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.2.1 — 2026-07-25
 
 - **CI**: pushing a release tag now also creates a GitHub Release, with notes pulled from this changelog's section for that version and the built wheel and sdist attached.
 
