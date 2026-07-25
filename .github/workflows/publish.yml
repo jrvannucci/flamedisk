@@ -13,6 +13,7 @@ jobs:
     environment: pypi
     permissions:
       id-token: write   # required for OIDC trusted publishing
+      contents: write   # required to create the GitHub Release
 
     steps:
       - uses: actions/checkout@v4
@@ -34,3 +35,29 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+      - name: Extract changelog section
+        # Pull the notes for this version out of CHANGELOG.md for the release
+        # body. Falls back to a link if the section is missing.
+        run: |
+          awk -v ver="${GITHUB_REF_NAME}" '
+            BEGIN { needle = "## " ver }
+            {
+              line=$0
+              if (substr(line,1,length(needle))==needle && (length(line)==length(needle) || substr(line,length(needle)+1,1) ~ /[ \t]/)) { found=1; next }
+              if (found && substr(line,1,3)=="## ") exit
+              if (found) print line
+            }
+          ' CHANGELOG.md | sed '/./,$!d' > release_notes.md
+          if [ ! -s release_notes.md ]; then
+            echo "See [CHANGELOG.md](CHANGELOG.md) for details." > release_notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: flamedisk ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
