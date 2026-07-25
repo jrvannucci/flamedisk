@@ -37,8 +37,7 @@ Changelog = "https://github.com/jrvannucci/flamedisk/blob/main/CHANGELOG.md"
 flamedisk = "flamedisk.cli:main"
 
 [project.optional-dependencies]
-rich = ["rich>=13"]
-dev  = ["ruff>=0.4", "pytest>=7"]
+dev = ["ruff>=0.4", "pytest>=7", "mypy>=1.8"]
 
 # Version is derived from the latest `X.Y.Z` git tag by versioningit; there is
 # no version string checked into the source tree. Tags are bare version numbers
@@ -84,3 +83,14 @@ testpaths = ["tests"]
 # tests/ is on sys.path so `from conftest import ...` resolves for helpers.
 pythonpath = ["tests"]
 addopts = "-q --strict-markers"
+
+[tool.mypy]
+# The package ships a py.typed marker, so its public signatures are a promise
+# to downstream users; type-check them strictly to keep that promise honest.
+# 3.10 is the lowest target this mypy supports; the package still runs on 3.9
+# (guaranteed by ruff's UP rules plus `from __future__ import annotations`).
+python_version = "3.10"
+files = ["flamedisk"]
+strict = true
+warn_unused_ignores = true
+warn_redundant_casts = true

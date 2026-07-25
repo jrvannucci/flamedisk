@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Fix**: `write_html` now creates missing parent directories, so `flamedisk -o new/dir/report.html` no longer fails when the directory does not exist yet.
+- **Tooling**: added a `mypy --strict` type-check job to CI. The package ships a `py.typed` marker, so its signatures are now verified rather than merely promised.
+- **Packaging**: removed the unused `rich` optional dependency; `mypy` is now part of the `dev` extra.
+
 ## 1.1.0 — 2026-07-25
 
 - **Feature**: `--actual-size` (`disk_usage=True`) measures allocated disk blocks (`st_blocks × 512`) instead of apparent file size, matching plain `du`. Falls back to apparent size where `st_blocks` is unavailable (Windows).

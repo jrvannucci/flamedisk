@@ -85,8 +85,8 @@ Render *root* as a complete, self-contained HTML document string.
 flamedisk.write_html(root: Node, output: str, title: str | None = None) -> None
 ```
 
-Write the HTML report to *output*. Equivalent to
-`Path(output).write_text(render_html(root, title), encoding="utf-8")`.
+Write the HTML report to *output*, creating any missing parent directories.
+Equivalent to `render_html`, then `Path(output).write_text(..., encoding="utf-8")`.
 
 ---
 

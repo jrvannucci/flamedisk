@@ -139,6 +139,23 @@ def test_write_html_handles_unicode(tmp_path: Path):
     assert "café ☕" in out.read_text(encoding="utf-8")
 
 
+def test_write_html_creates_missing_parent_dirs(tree: Path, tmp_path: Path):
+    """`-o some/new/dir/report.html` should not fail just because the
+    intermediate directories do not exist yet."""
+    out = tmp_path / "new" / "nested" / "report.html"
+    assert not out.parent.exists()
+    write_html(scan(str(tree)), str(out), "T")
+    assert out.is_file()
+
+
+def test_write_html_bare_filename_in_cwd(tree: Path, tmp_path: Path, monkeypatch):
+    """A filename with no directory component must write to the cwd, not raise
+    on an empty parent path."""
+    monkeypatch.chdir(tmp_path)
+    write_html(scan(str(tree)), "report.html")
+    assert (tmp_path / "report.html").is_file()
+
+
 def test_render_html_gz_roundtrips(tree: Path):
     root = scan(str(tree))
     gz = render_html_gz(root)

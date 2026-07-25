@@ -52,8 +52,10 @@ from __future__ import annotations
 
 import os
 import stat
+from collections.abc import Container
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass
@@ -88,14 +90,14 @@ class Node:
     ino: int = 0
     nlink: int = 0
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Return a compact JSON-serialisable representation.
 
         ``path`` and ``error`` are omitted when absent to keep payload small.
         ``children`` is omitted for leaf nodes. The hard-link bookkeeping
         fields (``dev``/``ino``/``nlink``) are never included.
         """
-        d: dict = {"n": self.name, "s": self.size}
+        d: dict[str, Any] = {"n": self.name, "s": self.size}
         if self.is_dir:
             d["d"] = 1
         if self.path:
@@ -217,7 +219,7 @@ def _entry_size(st: os.stat_result, disk_usage: bool) -> int:
     if disk_usage:
         blocks = getattr(st, "st_blocks", None)
         if blocks is not None:
-            return blocks * 512
+            return int(blocks) * 512
     return st.st_size
 
 
@@ -306,7 +308,7 @@ def _scan_dir(
         return node
 
     # Separate dirs (need recursion) from files (cheap inline)
-    dir_futures: list[tuple[str, Future]] = []  # (entry_name, future)
+    dir_futures: list[tuple[str, Future[Node]]] = []  # (entry_name, future)
 
     for entry in entries:
         if entry.name in opts.exclude_set:
@@ -463,7 +465,7 @@ def _scan_dir_sync(
 
 def _dir_size_fast(
     path: str,
-    exclude_set,
+    exclude_set: Container[str],
     *,
     disk_usage: bool = False,
     one_file_system: bool = False,
