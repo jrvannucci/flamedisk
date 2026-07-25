@@ -22,13 +22,19 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # versioningit needs tags to resolve the version
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install deps
-        run: pip install markdown pymdown-extensions pygments
+        # flamedisk itself is installed so build_docs.py can read its version
+        # (single-sourced from git tags via versioningit).
+        run: |
+          pip install markdown pymdown-extensions pygments
+          pip install .
 
       - name: Build HTML site
         run: python .github/scripts/build_docs.py

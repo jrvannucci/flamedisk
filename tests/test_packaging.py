@@ -69,6 +69,21 @@ def test_nothing_reads_project_version_from_pyproject():
     assert not offenders, f"these still read project.version from pyproject: {offenders}"
 
 
+def test_build_docs_reads_version_from_package():
+    """Regression: build_docs.py used to regex ``__version__`` out of
+    flamedisk/__init__.py. Once versioningit removed that literal assignment,
+    the regex matched nothing and the docs workflow failed. The script must now
+    obtain the version by importing the package (single source of truth)."""
+    script = REPO / ".github" / "scripts" / "build_docs.py"
+    if not script.is_file():
+        pytest.skip("docs build script not present")
+    text = script.read_text(encoding="utf-8")
+    assert "import flamedisk" in text
+    assert "return flamedisk.__version__" in text
+    # The fragile source-parsing regex must be gone.
+    assert r"__version__\s*=" not in text
+
+
 def test_readme_is_declared():
     """Without this the PyPI page renders with no description."""
     assert 'readme = "README.md"' in read_pyproject()

@@ -7,7 +7,6 @@ wraps each page in a shared template, and copies docs/img/ into _site/.
 Run from the repo root:
     python .github/scripts/build_docs.py
 """
-import re
 import shutil
 from pathlib import Path
 
@@ -160,19 +159,21 @@ TEMPLATE = """\
 
 
 def read_version() -> str:
-    """Read the version from flamedisk/__init__.py.
+    """Return the flamedisk version.
 
-    pyproject.toml declares the version dynamically (via
-    tool.setuptools.dynamic), so there is no literal project.version key to
-    read. flamedisk.__version__ is the single source of truth; the publish
-    workflow's tag check reads the same place.
+    The version is single-sourced from git tags by versioningit — there is no
+    literal ``__version__`` assignment to parse anymore — so read it the same
+    way any consumer would: from the imported package. The docs workflow
+    installs flamedisk (with full git history) before running this script, so
+    the value matches the release being built. Falls back to a placeholder if
+    the package is somehow not importable, rather than failing the build.
     """
-    init = ROOT / "flamedisk" / "__init__.py"
-    m = re.search(r'^__version__\s*=\s*["\']([^"\']+)["\']',
-                  init.read_text(encoding="utf-8"), re.M)
-    if not m:
-        raise RuntimeError(f"could not find __version__ in {init}")
-    return m.group(1)
+    try:
+        import flamedisk
+
+        return flamedisk.__version__
+    except Exception:
+        return "0.0.0"
 
 
 def convert(md_text: str, img_prefix: str = "") -> tuple[str, str]:
