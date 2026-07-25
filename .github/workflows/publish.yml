@@ -3,7 +3,8 @@ name: Publish to PyPI
 on:
   push:
     tags:
-      - "v*.*.*"
+      # Release tags are bare version numbers, no `v` prefix (e.g. 1.0.0).
+      - "[0-9]*.[0-9]*.[0-9]*"
 
 jobs:
   build-and-publish:

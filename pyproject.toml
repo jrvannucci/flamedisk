@@ -40,12 +40,19 @@ flamedisk = "flamedisk.cli:main"
 rich = ["rich>=13"]
 dev  = ["ruff>=0.4", "pytest>=7"]
 
-# Version is derived from the latest `vX.Y.Z` git tag by versioningit; there is
-# no version string checked into the source tree. Tagging `v1.2.3` and pushing
-# it is what produces release 1.2.3 on PyPI (see .github/workflows/publish.yml).
-# Between tags, builds get a PEP 440 dev version like `1.2.4.dev5+g<hash>`.
+# Version is derived from the latest `X.Y.Z` git tag by versioningit; there is
+# no version string checked into the source tree. Tags are bare version numbers
+# with no `v` prefix — tagging `1.2.3` and pushing it is what produces release
+# 1.2.3 on PyPI (see .github/workflows/publish.yml). Between tags, builds get a
+# PEP 440 dev version like `1.2.4.dev5+g<hash>`.
 [tool.versioningit]
 default-version = "0.0.0+unknown"
+
+# Only bare numeric tags count as releases, so stray tags can't be mistaken for
+# a version.
+[tool.versioningit.vcs]
+method = "git"
+match = ["[0-9]*"]
 
 # versioningit writes the resolved version to this module at build time so the
 # installed package can expose `flamedisk.__version__` without importlib lookups.
