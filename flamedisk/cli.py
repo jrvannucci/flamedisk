@@ -154,7 +154,26 @@ Examples
     p.add_argument(
         "--follow-symlinks",
         action="store_true",
-        help="Follow symbolic links (beware of cycles).",
+        help="Follow symbolic links. Symlink cycles are detected and skipped.",
+    )
+    p.add_argument(
+        "--actual-size",
+        action="store_true",
+        help="Measure allocated disk blocks instead of apparent file size, "
+        "like plain du. Unix only; falls back to apparent size on Windows.",
+    )
+    p.add_argument(
+        "-x",
+        "--one-file-system",
+        action="store_true",
+        help="Skip directories on a different filesystem than the scan root "
+        "(like du -x). Useful when scanning / to avoid /proc, /sys, and mounts.",
+    )
+    p.add_argument(
+        "--dedup-links",
+        action="store_true",
+        help="Count hard-linked files only once, so shared storage is not "
+        "double-counted (like du).",
     )
     p.add_argument(
         "--workers",
@@ -216,6 +235,9 @@ def main(argv: list[str] | None = None) -> int:
         follow_symlinks=args.follow_symlinks,
         exclude=args.exclude,
         workers=args.workers,
+        disk_usage=args.actual_size,
+        one_file_system=args.one_file_system,
+        dedup_links=args.dedup_links,
     )
 
     elapsed = time.perf_counter() - t0

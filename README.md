@@ -35,7 +35,10 @@ flamedisk [path] [options]
 | `--depth N` | unlimited | Maximum scan depth |
 | `--min-size BYTES` | `0` | Skip files smaller than this (e.g. `1MB`, `512KB`) |
 | `--exclude NAME …` | — | Entry names to skip (e.g. `.git node_modules`) |
-| `--follow-symlinks` | off | Follow symbolic links (beware of cycles) |
+| `--follow-symlinks` | off | Follow symbolic links (cycles are detected and skipped) |
+| `--actual-size` | off | Measure allocated disk blocks instead of apparent size, like `du` (Unix only) |
+| `-x` / `--one-file-system` | off | Skip directories on a different filesystem, like `du -x` |
+| `--dedup-links` | off | Count hard-linked files only once, like `du` |
 | `--workers N` | auto | Thread-pool size. Auto = `cpu_count × 4`, max 32 |
 | `-q` / `--no-browser` | off | Skip opening a browser window |
 | `--json` | off | Print raw JSON tree to stdout instead of HTML |
