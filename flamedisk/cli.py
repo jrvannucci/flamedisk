@@ -31,7 +31,9 @@ import sys
 import tempfile
 import time
 import webbrowser
+from collections.abc import Callable
 from pathlib import Path
+from typing import TextIO
 
 from . import __version__
 from .renderer import write_html
@@ -47,6 +49,20 @@ def _fmt(n: int) -> str:
             return f"{n:.1f} {unit}" if unit != "B" else f"{n} B"
         n /= 1024  # type: ignore[assignment]
     return str(n)
+
+
+def _progress_writer(stream: TextIO) -> Callable[[int, int], None]:
+    """Return an ``on_progress`` callback that redraws a one-line live counter.
+
+    Uses a carriage return with trailing padding (no ANSI) so it overwrites the
+    previous, possibly longer, line on any terminal.
+    """
+
+    def report(entries: int, nbytes: int) -> None:
+        stream.write(f"\r⠿  Scanning… {entries:,} entries · {_fmt(nbytes)}    ")
+        stream.flush()
+
+    return report
 
 
 def _parse_size(s: str) -> int:
@@ -109,6 +125,7 @@ Examples
   flamedisk /var/log -o report.html          # save HTML, open browser
   flamedisk . --depth 4 --min-size 1MB       # limit depth & skip small files
   flamedisk / --exclude proc sys dev -q      # skip virtual FSes, no browser
+  flamedisk . --exclude '*.log' '*.tmp'      # skip files by glob pattern
   flamedisk --exclude .git -- "/path/My Dir" # exclude + spaced path via --
   flamedisk . --json | jq '.children[0]'     # raw JSON tree to stdout
 """,
@@ -148,8 +165,9 @@ Examples
         # consume a trailing positional (the path) as an exclude name.
         # Use -- to separate --exclude list from a spaced path, e.g.:
         #   flamedisk --exclude .git node_modules -- "/my dir"
-        help="Entry names to skip, e.g. --exclude .git node_modules __pycache__ "
-        "(use -- before path if the path follows: --exclude .git -- '/my dir')",
+        help="Entry names or glob patterns to skip, e.g. --exclude .git "
+        "node_modules '*.log'. Quote globs so the shell does not expand them. "
+        "(Use -- before the path if it follows: --exclude .git -- '/my dir')",
     )
     p.add_argument(
         "--follow-symlinks",
@@ -225,7 +243,12 @@ def main(argv: list[str] | None = None) -> int:
     if not os.path.isdir(root_path):
         parser.error(f"Not a directory: {root_path!r}")
 
-    print(f"⠿  Scanning {root_path} …", file=sys.stderr, flush=True)
+    # Live progress only on an interactive terminal; when stderr is redirected
+    # (a pipe, a file, CI) fall back to a single static line so logs stay clean.
+    live = sys.stderr.isatty()
+    on_progress = _progress_writer(sys.stderr) if live else None
+    if not live:
+        print(f"⠿  Scanning {root_path} …", file=sys.stderr, flush=True)
 
     t0 = time.perf_counter()
     tree = scan(
@@ -238,9 +261,12 @@ def main(argv: list[str] | None = None) -> int:
         disk_usage=args.actual_size,
         one_file_system=args.one_file_system,
         dedup_links=args.dedup_links,
+        on_progress=on_progress,
     )
 
     elapsed = time.perf_counter() - t0
+    if live:
+        sys.stderr.write("\r" + " " * 60 + "\r")  # erase the progress line
     print(f"✓  {root_path} — {_fmt(tree.size)} — {elapsed:.2f}s", file=sys.stderr)
 
     if args.json:

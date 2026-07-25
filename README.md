@@ -34,7 +34,7 @@ flamedisk [path] [options]
 | `-o FILE` / `--output FILE` | temp file | Write HTML to a specific path |
 | `--depth N` | unlimited | Maximum scan depth |
 | `--min-size BYTES` | `0` | Skip files smaller than this (e.g. `1MB`, `512KB`) |
-| `--exclude NAME …` | — | Entry names to skip (e.g. `.git node_modules`) |
+| `--exclude NAME …` | — | Names or glob patterns to skip (e.g. `.git node_modules '*.log'`) |
 | `--follow-symlinks` | off | Follow symbolic links (cycles are detected and skipped) |
 | `--actual-size` | off | Measure allocated disk blocks instead of apparent size, like `du` (Unix only) |
 | `-x` / `--one-file-system` | off | Skip directories on a different filesystem, like `du -x` |
@@ -59,6 +59,9 @@ flamedisk /usr --depth 4 --min-size 1MB
 
 # Skip virtual filesystems
 flamedisk / --exclude proc sys dev -q
+
+# Skip files by glob pattern (quote so the shell doesn't expand them)
+flamedisk . --exclude '*.log' '*.tmp'
 
 # Path with spaces
 flamedisk "/home/My Documents"

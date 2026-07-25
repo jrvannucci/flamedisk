@@ -52,10 +52,53 @@ from __future__ import annotations
 
 import os
 import stat
-from collections.abc import Container
+import time
+from collections.abc import Callable, Container
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
+from fnmatch import fnmatch
+from threading import Lock
 from typing import Any
+
+# Characters that make an --exclude entry a glob pattern rather than a literal
+# name. Patterns without any of these are matched by fast exact set membership.
+_GLOB_CHARS = frozenset("*?[")
+
+
+def _is_glob(pattern: str) -> bool:
+    return any(c in _GLOB_CHARS for c in pattern)
+
+
+class _Progress:
+    """Thread-safe running tally forwarded to a user callback while scanning.
+
+    Worker threads call :meth:`add` as each directory is finished. The callback
+    fires at most once every ``interval`` seconds (coalescing bursts from many
+    threads) so a live display updates smoothly without lock thrash. It is
+    always invoked under the lock, so the callback need not be reentrant.
+    """
+
+    def __init__(self, callback: Callable[[int, int], None], interval: float = 0.1):
+        self._cb = callback
+        self._interval = interval
+        self._lock = Lock()
+        self._entries = 0
+        self._bytes = 0
+        self._last = 0.0
+
+    def add(self, entries: int, nbytes: int) -> None:
+        with self._lock:
+            self._entries += entries
+            self._bytes += nbytes
+            now = time.monotonic()
+            if now - self._last >= self._interval:
+                self._last = now
+                self._cb(self._entries, self._bytes)
+
+    def final(self) -> None:
+        """Flush the final totals unconditionally (end of scan)."""
+        with self._lock:
+            self._cb(self._entries, self._bytes)
 
 
 @dataclass
@@ -121,10 +164,12 @@ class _Opts:
     min_size: int
     follow_symlinks: bool
     exclude_set: frozenset[str]
+    exclude_globs: tuple[str, ...]
     disk_usage: bool
     one_file_system: bool
     root_dev: int
     track_links: bool
+    progress: _Progress | None
 
 
 def scan(
@@ -138,6 +183,7 @@ def scan(
     disk_usage: bool = False,
     one_file_system: bool = False,
     dedup_links: bool = False,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> Node:
     """Recursively scan *root* and return a :class:`Node` tree.
 
@@ -161,12 +207,21 @@ def scan(
         one_file_system: Do not descend into directories on a different device
                          than *root* (like ``du -x``).
         dedup_links:     Count each hard-linked inode only once.
+        exclude:         Entry names to skip. An entry containing ``*``, ``?``,
+                         or ``[`` is treated as a glob matched against each
+                         entry's basename (e.g. ``*.log``); others match the
+                         name exactly.
+        on_progress:     Optional callback invoked periodically during the scan
+                         with ``(entries_seen, bytes_seen)`` running totals, and
+                         once more with the final totals when the scan finishes.
 
     Returns:
         Node: Root node with ``size`` = total bytes under *root*.
     """
     root = os.path.abspath(root)
-    exclude_set = frozenset(exclude or [])
+    patterns = exclude or []
+    exclude_set = frozenset(p for p in patterns if not _is_glob(p))
+    exclude_globs = tuple(p for p in patterns if _is_glob(p))
 
     if workers <= 0:
         workers = min(32, (os.cpu_count() or 1) * 4)
@@ -181,15 +236,19 @@ def scan(
     if not stat.S_ISDIR(st.st_mode):
         return Node(name=root_name, path=root, size=_entry_size(st, disk_usage))
 
+    progress = _Progress(on_progress) if on_progress is not None else None
+
     opts = _Opts(
         max_depth=max_depth,
         min_size=min_size,
         follow_symlinks=follow_symlinks,
         exclude_set=exclude_set,
+        exclude_globs=exclude_globs,
         disk_usage=disk_usage,
         one_file_system=one_file_system,
         root_dev=st.st_dev,
         track_links=dedup_links,
+        progress=progress,
     )
 
     root_key = (st.st_dev, st.st_ino)
@@ -197,10 +256,18 @@ def scan(
     with ThreadPoolExecutor(max_workers=workers) as pool:
         root_node = _scan_dir(root, root_name, 0, frozenset({root_key}), opts, pool)
 
+    if progress is not None:
+        progress.final()
+
     if dedup_links:
         _dedup_hardlinks(root_node)
 
     return root_node
+
+
+def _excluded(name: str, opts: _Opts) -> bool:
+    """True if *name* matches an exact exclude or a glob pattern."""
+    return name in opts.exclude_set or any(fnmatch(name, g) for g in opts.exclude_globs)
 
 
 # ---------------------------------------------------------------------------
@@ -290,10 +357,13 @@ def _scan_dir(
         node.size = _dir_size_fast(
             path,
             opts.exclude_set,
+            exclude_globs=opts.exclude_globs,
             disk_usage=opts.disk_usage,
             one_file_system=opts.one_file_system,
             root_dev=opts.root_dev,
         )
+        if opts.progress is not None:
+            opts.progress.add(0, node.size)
         return node
 
     try:
@@ -309,9 +379,10 @@ def _scan_dir(
 
     # Separate dirs (need recursion) from files (cheap inline)
     dir_futures: list[tuple[str, Future[Node]]] = []  # (entry_name, future)
+    local_bytes = 0  # file/symlink bytes discovered at this level, for progress
 
     for entry in entries:
-        if entry.name in opts.exclude_set:
+        if _excluded(entry.name, opts):
             continue
 
         try:
@@ -334,6 +405,7 @@ def _scan_dir(
             except OSError:
                 sz = 0
             node.size += sz
+            local_bytes += sz
             if sz >= opts.min_size:
                 node.children.append(Node(name=entry.name, path="", size=sz))
             continue
@@ -361,8 +433,12 @@ def _scan_dir(
         else:
             node_child = _make_file_node(entry.name, entry.path, st, opts)
             node.size += node_child.size
+            local_bytes += node_child.size
             if node_child.size >= opts.min_size:
                 node.children.append(node_child)
+
+    if opts.progress is not None:
+        opts.progress.add(len(entries), local_bytes)
 
     # Collect directory results.  A worker that dies unexpectedly must not
     # take the whole scan with it — record the failure on a stub node and
@@ -398,10 +474,13 @@ def _scan_dir_sync(
         node.size = _dir_size_fast(
             path,
             opts.exclude_set,
+            exclude_globs=opts.exclude_globs,
             disk_usage=opts.disk_usage,
             one_file_system=opts.one_file_system,
             root_dev=opts.root_dev,
         )
+        if opts.progress is not None:
+            opts.progress.add(0, node.size)
         return node
 
     try:
@@ -411,8 +490,10 @@ def _scan_dir_sync(
         node.error = str(exc)
         return node
 
+    local_bytes = 0  # file/symlink bytes discovered at this level, for progress
+
     for entry in entries:
-        if entry.name in opts.exclude_set:
+        if _excluded(entry.name, opts):
             continue
 
         try:
@@ -433,6 +514,7 @@ def _scan_dir_sync(
             except OSError:
                 sz = 0
             node.size += sz
+            local_bytes += sz
             if sz >= opts.min_size:
                 node.children.append(Node(name=entry.name, path="", size=sz))
             continue
@@ -456,8 +538,12 @@ def _scan_dir_sync(
         else:
             node_child = _make_file_node(entry.name, entry.path, st, opts)
             node.size += node_child.size
+            local_bytes += node_child.size
             if node_child.size >= opts.min_size:
                 node.children.append(node_child)
+
+    if opts.progress is not None:
+        opts.progress.add(len(entries), local_bytes)
 
     node.children.sort(key=lambda n: (-n.size, n.name))
     return node
@@ -467,16 +553,17 @@ def _dir_size_fast(
     path: str,
     exclude_set: Container[str],
     *,
+    exclude_globs: tuple[str, ...] = (),
     disk_usage: bool = False,
     one_file_system: bool = False,
     root_dev: int = 0,
 ) -> int:
     """Iterative byte-count with no Node allocation (used at max-depth cutoff).
 
-    ``exclude_set`` is applied at every level, matching the behaviour of the
-    full-tree walk.  Without it, excluded names below the depth cutoff would
-    still be counted, making ``--depth`` and ``--exclude`` give wrong totals
-    when combined.
+    ``exclude_set`` and ``exclude_globs`` are applied at every level, matching
+    the behaviour of the full-tree walk.  Without them, excluded names below the
+    depth cutoff would still be counted, making ``--depth`` and ``--exclude``
+    give wrong totals when combined.
 
     ``one_file_system`` and ``disk_usage`` are honoured here too, so the total
     below the cutoff is measured on the same basis as the rest of the tree.
@@ -493,7 +580,9 @@ def _dir_size_fast(
         try:
             with os.scandir(cur) as it:
                 for entry in it:
-                    if entry.name in exclude_set:
+                    if entry.name in exclude_set or any(
+                        fnmatch(entry.name, g) for g in exclude_globs
+                    ):
                         continue
                     try:
                         st = entry.stat(follow_symlinks=False)

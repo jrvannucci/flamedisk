@@ -14,6 +14,7 @@ flamedisk.scan(
     disk_usage: bool = False,
     one_file_system: bool = False,
     dedup_links: bool = False,
+    on_progress: Callable[[int, int], None] | None = None,
 ) -> Node
 ```
 
@@ -27,11 +28,12 @@ Recursively scan *path* and return a `Node` tree.
 | `max_depth` | `int` | `0` | Maximum recursion depth; `0` means unlimited |
 | `min_size` | `int` | `0` | Omit files smaller than this many bytes |
 | `follow_symlinks` | `bool` | `False` | Follow symbolic links. Symlink cycles are detected and skipped |
-| `exclude` | `list[str]` | `[]` | Entry names to skip at any depth (e.g. `[".git", "node_modules"]`) |
+| `exclude` | `list[str]` | `[]` | Names or glob patterns to skip at any depth. An entry containing `*`, `?`, or `[` is matched as a glob against each basename (e.g. `"*.log"`); others match exactly (e.g. `".git"`) |
 | `workers` | `int` | `0` | Thread-pool size; `0` = `cpu_count × 4`, capped at 32 |
 | `disk_usage` | `bool` | `False` | Measure allocated blocks (`st_blocks × 512`) instead of apparent size, like `du`. Falls back to apparent size where `st_blocks` is unavailable (Windows) |
 | `one_file_system` | `bool` | `False` | Skip directories on a different device than *path*, like `du -x` |
 | `dedup_links` | `bool` | `False` | Count each hard-linked inode only once, like `du` |
+| `on_progress` | `Callable[[int, int], None] \| None` | `None` | Called periodically during the scan with `(entries_seen, bytes_seen)` running totals, and once more with the final totals when the scan completes |
 
 **Returns** — `Node` representing the root directory.
 
