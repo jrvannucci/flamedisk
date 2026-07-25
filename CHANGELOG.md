@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **CI**: pushing a release tag now also creates a GitHub Release, with notes pulled from this changelog's section for that version and the built wheel and sdist attached.
+
 ## 1.2.0 — 2026-07-25
 
 - **Feature**: `--exclude` now accepts glob patterns. An entry containing `*`, `?`, or `[` is matched against each basename (e.g. `--exclude '*.log' '*.tmp'`); entries without glob characters still match names exactly, so existing usage is unchanged. Patterns apply at every depth, including below a `--depth` cutoff. Quote globs so the shell does not expand them.
