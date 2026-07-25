@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.1 — 2026-07-25
 
 - **Fix**: `write_html` now creates missing parent directories, so `flamedisk -o new/dir/report.html` no longer fails when the directory does not exist yet.
 - **Tooling**: added a `mypy --strict` type-check job to CI. The package ships a `py.typed` marker, so its signatures are now verified rather than merely promised.
