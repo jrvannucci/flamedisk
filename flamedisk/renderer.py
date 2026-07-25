@@ -29,6 +29,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from .scanner import Node
 
@@ -72,7 +73,7 @@ def _encode_tree(root: Node) -> str:
 
     _visit(root)
 
-    payload: dict = {"N": names, "S": sizes, "D": dirs, "C": children}
+    payload: dict[str, Any] = {"N": names, "S": sizes, "D": dirs, "C": children}
     if root_path:
         payload["P"] = root_path
     if errors:
@@ -117,10 +118,13 @@ def write_html(root: Node, output: str, title: str | None = None) -> None:
 
     Args:
         root:   Root node.
-        output: Destination file path.
+        output: Destination file path. Missing parent directories are created.
         title:  Optional page title.
     """
-    Path(output).write_text(render_html(root, title), encoding="utf-8")
+    out = Path(output)
+    if out.parent != Path():
+        out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(render_html(root, title), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
