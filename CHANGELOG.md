@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Feature**: `--exclude` now accepts glob patterns. An entry containing `*`, `?`, or `[` is matched against each basename (e.g. `--exclude '*.log' '*.tmp'`); entries without glob characters still match names exactly, so existing usage is unchanged. Patterns apply at every depth, including below a `--depth` cutoff. Quote globs so the shell does not expand them.
+- **Feature**: the CLI shows a live progress counter (entries scanned and running byte total) on an interactive terminal, updated as the scan runs. When stderr is redirected (a pipe, a file, CI) it falls back to the previous single static line, so logs stay clean.
+- **API**: `scan()` gains an `on_progress` callback invoked periodically with `(entries_seen, bytes_seen)` running totals and once with the final totals.
+
 ## 1.1.1 — 2026-07-25
 
 - **Fix**: `write_html` now creates missing parent directories, so `flamedisk -o new/dir/report.html` no longer fails when the directory does not exist yet.
