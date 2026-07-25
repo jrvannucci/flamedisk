@@ -15,6 +15,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # versioningit derives the version from `git describe`, so it needs
+          # the tag and full history — a shallow clone would break the version.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -23,16 +27,8 @@ jobs:
       - name: Install build tools
         run: pip install build
 
-      - name: Verify tag matches package version
-        run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          PKG=$(python -c "import re,pathlib; print(re.search(r'__version__ = \"([^\"]+)\"', pathlib.Path('flamedisk/__init__.py').read_text()).group(1))")
-          if [ "$TAG" != "$PKG" ]; then
-            echo "Tag $TAG does not match flamedisk/__init__.py version $PKG"
-            exit 1
-          fi
-
       - name: Build sdist and wheel
+        # versioningit sets the version from the ${{ github.ref_name }} tag.
         run: python -m build
 
       - name: Publish to PyPI

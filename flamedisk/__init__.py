@@ -18,5 +18,15 @@ from __future__ import annotations
 from .renderer import render_html, write_html
 from .scanner import Node, scan
 
-__version__ = "1.0.0"
+try:
+    # Written by versioningit at build time from the latest git tag.
+    from ._version import __version__
+except ImportError:  # pragma: no cover - running from a source tree with no build
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        __version__ = version("flamedisk")
+    except PackageNotFoundError:
+        __version__ = "0.0.0+unknown"
+
 __all__ = ["scan", "Node", "render_html", "write_html", "__version__"]

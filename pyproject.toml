@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68", "wheel", "versioningit>=3"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -40,8 +40,18 @@ flamedisk = "flamedisk.cli:main"
 rich = ["rich>=13"]
 dev  = ["ruff>=0.4", "pytest>=7"]
 
-[tool.setuptools.dynamic]
-version = { attr = "flamedisk.__version__" }
+# Version is derived from the latest `vX.Y.Z` git tag by versioningit; there is
+# no version string checked into the source tree. Tagging `v1.2.3` and pushing
+# it is what produces release 1.2.3 on PyPI (see .github/workflows/publish.yml).
+# Between tags, builds get a PEP 440 dev version like `1.2.4.dev5+g<hash>`.
+[tool.versioningit]
+default-version = "0.0.0+unknown"
+
+# versioningit writes the resolved version to this module at build time so the
+# installed package can expose `flamedisk.__version__` without importlib lookups.
+# The file is generated, never committed (see .gitignore).
+[tool.versioningit.write]
+file = "flamedisk/_version.py"
 
 [tool.setuptools.packages.find]
 where = ["."]

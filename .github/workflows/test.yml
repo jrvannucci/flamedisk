@@ -23,6 +23,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # versioningit needs tags to resolve the version
 
       - uses: actions/setup-python@v5
         with:
@@ -41,6 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # versioningit needs tags to resolve the version
 
       - uses: actions/setup-python@v5
         with:

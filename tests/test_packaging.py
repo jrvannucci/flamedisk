@@ -30,7 +30,9 @@ def read_pyproject() -> str:
 def test_version_is_declared_dynamic():
     text = read_pyproject()
     assert 'dynamic = ["version"]' in text
-    assert 'attr = "flamedisk.__version__"' in text
+    # The version is supplied by versioningit (derived from git tags), not from
+    # a literal or an attr reference.
+    assert "[tool.versioningit]" in text
 
 
 def test_pyproject_has_no_literal_version():
@@ -40,7 +42,10 @@ def test_pyproject_has_no_literal_version():
 
 
 def test_version_looks_like_a_release():
-    assert re.fullmatch(r"\d+\.\d+\.\d+", flamedisk.__version__), flamedisk.__version__
+    # versioningit yields a bare ``X.Y.Z`` when built exactly on a tag, and a
+    # PEP 440 dev/post form (e.g. ``1.0.1.dev4+g1a2b3c4``) between tags. Both are
+    # valid; require only the leading numeric release segment.
+    assert re.match(r"\d+\.\d+\.\d+", flamedisk.__version__), flamedisk.__version__
 
 
 def test_nothing_reads_project_version_from_pyproject():
